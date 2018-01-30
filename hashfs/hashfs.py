@@ -33,10 +33,20 @@ class HashFS(object):
         dmode (int, optional): Directory mode permission to set for
             subdirectories. Defaults to ``0o755`` which allows owner/group to
             read/write and everyone else to read and everyone to execute.
+        put_strategy (mixed, optional): Default ``put_strategy`` for :meth:`put`
+            method. See :meth:`put` for more information. Defaults to
+            :attr:`PutStrategies.copy`.
     """
 
     def __init__(
-        self, root, depth=4, width=1, algorithm="sha256", fmode=0o664, dmode=0o755
+        self,
+        root,
+        depth=4,
+        width=1,
+        algorithm="sha256",
+        fmode=0o664,
+        dmode=0o755,
+        put_strategy=None,
     ):
         self.root = os.path.realpath(root)
         self.depth = depth
@@ -44,8 +54,9 @@ class HashFS(object):
         self.algorithm = algorithm
         self.fmode = fmode
         self.dmode = dmode
+        self.put_strategy = PutStrategies.get(put_strategy) or PutStrategies.copy
 
-    def put(self, file, extension=None, simulate=False):
+    def put(self, file, extension=None, put_strategy=None, simulate=False):
         """Store contents of `file` on disk using its content hash for the
         address.
 
@@ -53,8 +64,19 @@ class HashFS(object):
             file (mixed): Readable object or path to file.
             extension (str, optional): Optional extension to append to file
                 when saving.
-            simulate (bool, optional): Return the HashAddress of the file that
-                would be appended but don't do anything.
+            put_strategy (mixed, optional): The strategy to use for adding files;
+                may be a function or the string name of one of the built-in
+                put strategies declared in :class:`PutStrategies` class.
+                Defaults to :attr:`PutStrategies.copy`.
+            simulate (bool, optional): Return the :class:`HashAddress` of the
+                file that would be appended but don't do anything.
+
+        Put strategies are functions ``(hashfs, stream, filepath)`` where
+        ``hashfs`` is the :class:`HashFS` instance from which :meth:`put` was
+        called; ``stream`` is the :class:`Stream` object representing the
+        data to add; and ``filepath`` is the string absolute file path inside
+        the HashFS where it needs to be saved. The put strategy function should
+        create the path ``filepath`` containing the data in ``stream``.
 
         Returns:
             HashAddress: File's hash address.
@@ -69,9 +91,13 @@ class HashFS(object):
             if not os.path.isfile(filepath):
                 is_duplicate = False
                 if not simulate:
-                    fname = self._mktempfile(stream)
                     self.makepath(os.path.dirname(filepath))
-                    shutil.move(fname, filepath)
+                    put_strategy = (
+                        PutStrategies.get(put_strategy)
+                        or self.put_strategy
+                        or PutStrategies.copy
+                    )
+                    put_strategy(self, stream, filepath)
             else:
                 is_duplicate = True
 
@@ -185,8 +211,7 @@ class HashFS(object):
                 yield folder
 
     def count(self):
-        """Return count of the number of files in the :attr:`root` directory.
-        """
+        """Return count of the number of files in the :attr:`root` directory."""
         count = 0
         for _ in self:
             count += 1
@@ -342,8 +367,7 @@ class HashFS(object):
         return self.files()
 
     def __len__(self):
-        """Return count of the number of files in the :attr:`root` directory.
-        """
+        """Return count of the number of files in the :attr:`root` directory."""
         return self.count()
 
 
@@ -423,3 +447,26 @@ class Stream(object):
             self._obj.close()
         else:
             self._obj.seek(self._pos)
+
+
+class PutStrategies:
+    """Namespace for built-in put strategies.
+
+    Should not be instantiated. Use the :meth:`get` static method to look up a
+    strategy by name, or directly reference one of the included class methods.
+    """
+
+    @classmethod
+    def get(cls, method):
+        """Look up a stragegy by name string. You can also pass a function
+        which will be returned as is."""
+        if method:
+            if method == "get":
+                raise ValueError("invalid put strategy name, 'get'")
+            return getattr(cls, method) if isinstance(method, str) else method
+
+    @staticmethod
+    def copy(hashfs, src_stream, dst_path):
+        """The default copy put strategy, writes the file object to a
+        temporary file on disk and then moves it into place."""
+        shutil.move(hashfs._mktempfile(src_stream), dst_path)
