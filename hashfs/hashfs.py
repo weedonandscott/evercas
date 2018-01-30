@@ -34,9 +34,9 @@ class HashFS(object):
         dmode (int, optional): Directory mode permission to set for
             subdirectories. Defaults to ``0o755`` which allows owner/group to
             read/write and everyone else to read and everyone to execute.
-        put_strategy (mixed, optional): Default ``put_strategy`` for :meth:`put`
-            method. See :meth:`put` for more information. Defaults to
-            :attr:`PutStrategies.copy`.
+        put_strategy (mixed, optional): Default ``put_strategy`` for
+            :meth:`put` method. See :meth:`put` for more information. Defaults
+            to :attr:`PutStrategies.copy`.
     """
 
     def __init__(
@@ -65,10 +65,10 @@ class HashFS(object):
             file (mixed): Readable object or path to file.
             extension (str, optional): Optional extension to append to file
                 when saving.
-            put_strategy (mixed, optional): The strategy to use for adding files;
-                may be a function or the string name of one of the built-in
-                put strategies declared in :class:`PutStrategies` class.
-                Defaults to :attr:`PutStrategies.copy`.
+            put_strategy (mixed, optional): The strategy to use for adding
+                files; may be a function or the string name of one of the
+                built-in put strategies declared in :class:`PutStrategies`
+                class. Defaults to :attr:`PutStrategies.copy`.
             simulate (bool, optional): Return the :class:`HashAddress` of the
                 file that would be appended but don't do anything.
 
@@ -486,8 +486,8 @@ class PutStrategies:
         temporary file on disk and then moves it into place."""
         shutil.move(hashfs._mktempfile(src_stream), dst_path)
 
+    if hasattr(os, "link"):
 
-    if hasattr(os, 'link'):
         @classmethod
         def link(cls, hashfs, src_stream, dst_path):
             """Use os.link if available to create a hard link to the original
@@ -518,6 +518,7 @@ class PutStrategies:
                 # After creating the hard link, make sure it has the correct
                 # file permissions
                 os.chmod(dst_path, hashfs.fmode)
+
     else:
         # Platform does not support os.link, so use the default copy strategy
         # instead
