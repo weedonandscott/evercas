@@ -418,6 +418,15 @@ class Stream(object):
         except Exception:
             buffer_size = 8192
 
+        try:
+            # Expose the original file path if available.
+            # This allows put strategies to use OS functions, working with
+            # paths, instead of being limited to the API provided by Python
+            # file-like objects
+            self.name = obj.name
+        except AttributeError:
+            self.name = None
+
         self._obj = obj
         self._pos = pos
         self._buffer_size = buffer_size
