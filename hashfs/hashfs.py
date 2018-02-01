@@ -13,7 +13,7 @@ import shutil
 from tempfile import NamedTemporaryFile
 
 from .utils import issubdir, shard
-from ._compat import to_bytes, walk, FileExistsError
+from ._compat import to_bytes, walk, FileExistsError, is_callable
 
 
 class HashFS(object):
@@ -429,6 +429,8 @@ class Stream(object):
             # This allows put strategies to use OS functions, working with
             # paths, instead of being limited to the API provided by Python
             # file-like objects
+            # name property can also hold int fd, so we make it None in that
+            # case
             self.name = None if isinstance(obj.name, int) else obj.name
         except AttributeError:
             self.name = None
@@ -478,7 +480,7 @@ class PutStrategies:
         if method:
             if method == "get":
                 raise ValueError("invalid put strategy name, 'get'")
-            return getattr(cls, method) if isinstance(method, str) else method
+            return method if is_callable(method) else getattr(cls, method)
 
     @staticmethod
     def copy(hashfs, src_stream, dst_path):
