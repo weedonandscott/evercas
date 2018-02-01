@@ -25,7 +25,7 @@ def testfile(testpath):
 
 @pytest.fixture
 def stringio():
-    return StringIO(u"foo")
+    return StringIO("foo")
 
 
 @pytest.yield_fixture
@@ -51,6 +51,22 @@ def fs(testpath):
     return hashfs.HashFS(str(testpath))
 
 
+@pytest.fixture
+def testtree(testpath):
+    testpath.join("file a.txt").write(b"file a contents")
+    testpath.join("file b").write(b"file b contents")
+    testpath.join("file c.foo").write(b"file c contents")
+    subdir = testpath.mkdir("subdir")
+    subdir.join("1").write(b"xyz")
+    subdir.join("2").write(b"foo")
+    subdir.mkdir("subsubdir").join("file").write("contents.bar")
+    return testpath
+
+
+TESTTREE_NUM_FILES_NON_REC = 3
+TESTTREE_NUM_FILES_REC = 6
+
+
 def dummy_put_strategy(*a, **kw):
     pass
 
@@ -58,7 +74,7 @@ def dummy_put_strategy(*a, **kw):
 def put_range(fs, count):
     return dict(
         (address.abspath, address)
-        for address in (fs.put(StringIO(u"{0}".format(i))) for i in range(count))
+        for address in (fs.put(StringIO("{0}".format(i))) for i in range(count))
     )
 
 
@@ -144,51 +160,44 @@ def test_put_strategy_lookup():
     assert PutStrategies.get("link") == PutStrategies.link
     assert PutStrategies.get(dummy_put_strategy) is dummy_put_strategy
     with pytest.raises(ValueError):
-        PutStrategies.get('get')
+        PutStrategies.get("get")
     with pytest.raises(AttributeError):
-        PutStrategies.get('fake value')
+        PutStrategies.get("fake value")
 
 
-@pytest.mark.parametrize('put_strategy', [
-    None,
-    'copy',
-    PutStrategies.copy
-])
+@pytest.mark.parametrize("put_strategy", [None, "copy", PutStrategies.copy])
 def test_hashfs_default_put_strategy(fs, filepath, put_strategy):
     address = fs.put(str(filepath), put_strategy=put_strategy)
 
     assert_file_put(fs, address)
 
-    with open(address.abspath, 'rb') as fileobj:
+    with open(address.abspath, "rb") as fileobj:
         assert fileobj.read() == to_bytes(filepath.read())
 
 
-@pytest.mark.parametrize('put_strategy', [
-    'link',
-    PutStrategies.link
-])
+@pytest.mark.parametrize("put_strategy", ["link", PutStrategies.link])
 def test_hashfs_link_put_strategy(fs, filepath, put_strategy):
     address = fs.put(str(filepath), put_strategy=put_strategy)
 
     assert_file_put(fs, address)
 
-    with open(address.abspath, 'rb') as fileobj:
+    with open(address.abspath, "rb") as fileobj:
         assert fileobj.read() == to_bytes(filepath.read())
 
     # If the platform supports hard links and the os.path.samefile function
     # (Windows support for hard links and samefile requires >= Python 3.2)
-    if hasattr(os.path, 'samefile') and hasattr(os, 'link'):
+    if hasattr(os.path, "samefile") and hasattr(os, "link"):
         assert os.path.samefile(address.abspath, str(filepath))
 
 
 def test_hashfs_link_put_strategy_fallback(fs, stringio):
-    assert not hasattr(stringio, 'name')
+    assert not hasattr(stringio, "name")
 
     address = fs.put(stringio, put_strategy="link")
 
     assert_file_put(fs, address)
 
-    with open(address.abspath, 'rb') as fileobj:
+    with open(address.abspath, "rb") as fileobj:
         assert fileobj.read() == to_bytes(stringio.getvalue())
 
 
@@ -199,6 +208,35 @@ def test_hashfs_address(fs, stringio):
     assert os.path.join(fs.root, address.relpath) == address.abspath
     assert address.relpath.replace(os.sep, "") == address.id
     assert not address.is_duplicate
+
+
+@pytest.mark.parametrize(
+    "extensions",
+    [
+        True,
+        False,
+    ],
+)
+@pytest.mark.parametrize(
+    "recursive,exp_num_files",
+    [
+        (False, TESTTREE_NUM_FILES_NON_REC),
+        (True, TESTTREE_NUM_FILES_REC),
+    ],
+)
+def test_hashfs_putdir(fs, testtree, recursive, exp_num_files, extensions):
+    it = fs.putdir(str(testtree), recursive=recursive)
+
+    for i, (src, address) in enumerate(it):
+        assert_file_put(fs, address)
+
+        assert os.path.splitext(src)[1] == os.path.splitext(address.abspath)[1]
+
+        with open(src, "rb") as srcfile:
+            with open(address.abspath, "rb") as dstfile:
+                assert srcfile.read() == dstfile.read()
+
+    assert i + 1 == exp_num_files
 
 
 @pytest.mark.parametrize(
@@ -390,8 +428,8 @@ def test_hashfs_folders(fs):
 
 
 def test_hashfs_size(fs):
-    fs.put(StringIO(u"{0}".format(string.ascii_lowercase)))
-    fs.put(StringIO(u"{0}".format(string.ascii_uppercase)))
+    fs.put(StringIO("{0}".format(string.ascii_lowercase)))
+    fs.put(StringIO("{0}".format(string.ascii_uppercase)))
     expected = len(string.ascii_lowercase) + len(string.ascii_uppercase)
 
     assert fs.size() == expected
