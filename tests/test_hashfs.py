@@ -240,6 +240,24 @@ def test_hashfs_putdir(fs, testtree, recursive, exp_num_files, extensions):
 
 
 @pytest.mark.parametrize(
+    "lowercase_extensions",
+    [
+        True,
+        False,
+    ],
+)
+def test_hashfs_put_lowercase_extensions(fs, stringio, lowercase_extensions):
+    fs.lowercase_extensions = lowercase_extensions
+    address = fs.put(stringio, extension="TXT")
+
+    assert_file_put(fs, address)
+
+    dst_ext = os.path.splitext(address.abspath)[1]
+
+    assert dst_ext == (".txt" if lowercase_extensions else ".TXT")
+
+
+@pytest.mark.parametrize(
     "extension,address_attr",
     [
         ("", "id"),
