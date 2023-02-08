@@ -12,7 +12,7 @@ import shutil
 from tempfile import NamedTemporaryFile
 
 from .utils import issubdir, shard
-from ._compat import to_bytes, walk, FileExistsError, is_callable
+from ._compat import to_bytes, walk, FileExistsError, is_callable, list_dir_files
 
 
 class HashFS(object):
@@ -36,6 +36,8 @@ class HashFS(object):
         put_strategy (mixed, optional): Default ``put_strategy`` for
             :meth:`put` method. See :meth:`put` for more information. Defaults
             to :attr:`PutStrategies.copy`.
+        lowercase_extensions (bool, optional): Normalize all file extensions
+            to lower case when adding files. Defaults to ``False``.
     """
 
     def __init__(
@@ -47,6 +49,7 @@ class HashFS(object):
         fmode=0o664,
         dmode=0o755,
         put_strategy=None,
+        lowercase_extensions=False,
     ):
         self.root = os.path.realpath(root)
         self.depth = depth
@@ -55,6 +58,7 @@ class HashFS(object):
         self.fmode = fmode
         self.dmode = dmode
         self.put_strategy = PutStrategies.get(put_strategy) or PutStrategies.copy
+        self.lowercase_extensions = lowercase_extensions
 
     def put(self, file, extension=None, put_strategy=None, simulate=False):
         """Store contents of `file` on disk using its content hash for the
@@ -88,6 +92,9 @@ class HashFS(object):
         """
         stream = Stream(file)
 
+        if extension and self.lowercase_extensions:
+            extension = extension.lower()
+
         with closing(stream):
             id = self.computehash(stream)
             filepath = self.idpath(id, extension)
@@ -107,6 +114,26 @@ class HashFS(object):
                 is_duplicate = True
 
         return HashAddress(id, self.relpath(filepath), filepath, is_duplicate)
+
+    def putdir(self, root, extensions=True, recursive=False, **kwargs):
+        """Put all files from a directory.
+
+        Args:
+            root (str): Path to the directory to add.
+            extensions (bool, optional): Whether to add extensions when
+                saving (extension will be taken from input file). Defaults to
+                ``True``.
+            recursive (bool, optional): Find files recursively in ``root``.
+                Defaults to ``False``.
+            put_strategy (mixed, optional): same as :meth:`put`.
+            simulate (boo, optional): same as :meth:`put`.
+
+        Yields :class:`HashAddress`es for all added files.
+        """
+        for file in find_files(root, recursive=recursive):
+            extension = os.path.splitext(file)[1] if extensions else None
+            address = self.put(file, extension=extension, **kwargs)
+            yield (file, address)
 
     def _mktempfile(self, stream):
         """Create a named temporary file from a :class:`Stream` object and
@@ -203,9 +230,8 @@ class HashFS(object):
         """Return generator that yields all files in the :attr:`root`
         directory.
         """
-        for folder, subfolders, files in walk(self.root):
-            for file in files:
-                yield os.path.abspath(os.path.join(folder, file))
+        for file in find_files(self.root, recursive=True):
+            yield os.path.abspath(file)
 
     def folders(self):
         """Return generator that yields all folders in the :attr:`root`
@@ -374,6 +400,16 @@ class HashFS(object):
     def __len__(self):
         """Return count of the number of files in the :attr:`root` directory."""
         return self.count()
+
+
+def find_files(path, recursive=False):
+    if recursive:
+        for folder, subfolders, files in walk(path):
+            for file in files:
+                yield os.path.join(folder, file)
+    else:
+        for file in list_dir_files(path):
+            yield file
 
 
 class HashAddress(
