@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from io import StringIO, BufferedReader
 import os
 import os.path
 import string
+from io import BufferedReader, StringIO
 
 import py
 import pytest

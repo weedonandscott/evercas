@@ -1,14 +1,14 @@
 """Module for EverCas class.
 """
 
-from collections import namedtuple
-from contextlib import closing
+import errno
 import glob
 import hashlib
 import io
 import os
-import errno
 import shutil
+from collections import namedtuple
+from contextlib import closing
 from tempfile import NamedTemporaryFile
 
 from .utils import issubdir, shard
@@ -84,7 +84,7 @@ class EverCas(object):
         There are currently two built-in put strategies: "copy" (the default)
         and "link". "link" attempts to hard link the file into the EverCas if
         the platform and underlying filesystem support it, and falls back to
-        "copy" behaviour.
+        "copy" behavior.
 
         Returns:
             HashAddress: File's hash address.
@@ -156,7 +156,7 @@ class EverCas(object):
         return tmp.name
 
     def get(self, file):
-        """Return :class:`HashAdress` from given id or path. If `file` does not
+        """Return :class:`HashAddress` from given id or path. If `file` does not
         refer to a valid file, then ``None`` is returned.
 
         Args:
@@ -285,7 +285,7 @@ class EverCas(object):
         an extension, the path is considered a match if the basename matches
         the expected file path of the id.
         """
-        # Check for absoluate path.
+        # Check for absolute path.
         if os.path.isfile(file):
             return file
 
@@ -438,7 +438,7 @@ class HashAddress(
     Attributes:
         id (str): Hash ID (hexdigest) of file contents.
         relpath (str): Relative path location to :attr:`EverCas.root`.
-        abspath (str): Absoluate path location of file on disk.
+        abspath (str): Absolute path location of file on disk.
         is_duplicate (boolean, optional): Whether the hash address created was
             a duplicate of a previously existing file. Can only be ``True``
             after a put operation. Defaults to ``False``.
@@ -528,7 +528,7 @@ class PutStrategies:
 
     @classmethod
     def get(cls, method):
-        """Look up a stragegy by name string. You can also pass a function
+        """Look up a strategy by name string. You can also pass a function
         which will be returned as is."""
         if method:
             if method == "get":

@@ -32,7 +32,7 @@ build-backend = "pdm.pep517.api"
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 lint = [
-    "flake8==6.0.0",
+    "ruff==0.0.243",
 ]
 test = [
     "pytest==7.2.1",
@@ -50,3 +50,6 @@ build = "pdm build"
 deploy-pypi = "twine upload dist/*"
 deploy-docs = "mkdocs gh-deploy"
 release = {composite = ["build", "deploy-pypi", "deploy-docs"]}
+
+[tool.ruff]
+select = ["E", "F", "I001"]

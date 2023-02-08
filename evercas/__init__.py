@@ -12,5 +12,4 @@ Typical use cases for this kind of system are ones where:
 
 from .evercas import EverCas, HashAddress
 
-
 __all__ = ("EverCas", "HashAddress")
