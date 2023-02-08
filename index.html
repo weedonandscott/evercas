@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="Cloneable (with rclone) content-addressable storage for Python" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>EverCas</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+        <link href="assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "EverCas";
+        var mkdocs_page_input_path = "index.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <script src="js/jquery-3.6.0.min.js" defer></script>
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="." class="icon icon-home"> EverCas
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href=".">EverCas</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#features">Features</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#links">Links</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#quickstart">Quickstart</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#initialization">Initialization</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#basic-usage">Basic Usage</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#storing-content">Storing Content</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#retrieving-file-address">Retrieving File Address</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#retrieving-content">Retrieving Content</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#removing-content">Removing Content</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#advanced-usage">Advanced Usage</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#repairing-files">Repairing Files</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#walking-corrupted-files">Walking Corrupted Files</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#walking-all-files">Walking All Files</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#computing-size">Computing Size</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#hard-linking-files">Hard-linking files</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#custom-put-strategy">Custom Put Strategy</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#acknowledgements">Acknowledgements</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="api/">API Reference</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="changelog/">Changelog</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="versioning/">Versioning</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href=".">EverCas</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="." class="icon icon-home" alt="Docs"></a> &raquo;</li>
+      <li>EverCas</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/weedonandscott/evercas/edit/master/docs/index.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="evercas">EverCas</h1>
+<p>EverCas is a content-addressable file management system. What does that
+mean? Simply, that EverCas manages a directory where files are saved
+based on the file\'s hash.</p>
+<p>Typical use cases for this kind of system are ones where:</p>
+<ul>
+<li>Files are written once and never change (e.g. image storage).</li>
+<li>It\'s desirable to have no duplicate files (e.g. user uploads).</li>
+<li>File metadata is stored elsewhere (e.g. in a database).</li>
+</ul>
+<h2 id="features">Features</h2>
+<ul>
+<li>Files are stored once and never duplicated.</li>
+<li>Uses an efficient folder structure optimized for a large number of
+    files. File paths are based on the content hash and are nested based
+    on the first <code>n</code> number of characters.</li>
+<li>Can save files from local file paths or readable objects (open file
+    handlers, IO buffers, etc).</li>
+<li>Pluggable put strategies, allowing fine-grained control of how files
+    are added.</li>
+<li>Able to repair the root folder by reindexing all files. Useful if
+    the hashing algorithm or folder structure options change or to
+    initialize existing files.</li>
+<li>Supports any hashing algorithm available via <code>hashlib.new</code>.</li>
+<li>Python 3.10+ compatible.</li>
+<li>Support for hard-linking files into the EverCas-managed directory on
+    compatible filesystems</li>
+</ul>
+<h2 id="links">Links</h2>
+<ul>
+<li>Project: <a href="https://github.com/weedonandscott/evercas">https://github.com/weedonandscott/evercas</a></li>
+<li>Documentation: <a href="http://evercas.readthedocs.org">http://evercas.readthedocs.org</a></li>
+<li>PyPI: <a href="https://pypi.python.org/pypi/evercas/">https://pypi.python.org/pypi/evercas/</a></li>
+</ul>
+<h2 id="quickstart">Quickstart</h2>
+<p>Install using pip:</p>
+<pre><code>pip install evercas
+</code></pre>
+<h3 id="initialization">Initialization</h3>
+<pre><code class="language-python">from evercas import EverCas
+</code></pre>
+<p>Designate a root folder for <code>EverCas</code>. If the folder doesn\'t already
+exist, it will be created.</p>
+<pre><code class="language-python"># Set the `depth` to the number of subfolders the file's hash should be split when saving.
+# Set the `width` to the desired width of each subfolder.
+fs = EverCas('temp_evercas', depth=4, width=1, algorithm='sha256')
+
+# With depth=4 and width=1, files will be saved in the following pattern:
+# temp_evercas/a/b/c/d/efghijklmnopqrstuvwxyz
+
+# With depth=3 and width=2, files will be saved in the following pattern:
+# temp_evercas/ab/cd/ef/ghijklmnopqrstuvwxyz
+</code></pre>
+<p><strong>NOTE:</strong> The <code>algorithm</code> value should be a valid string argument to
+<code>hashlib.new()</code>.</p>
+<h2 id="basic-usage">Basic Usage</h2>
+<p><code>EverCas</code> supports basic file storage, retrieval, and removal as well as
+some more advanced features like file repair.</p>
+<h3 id="storing-content">Storing Content</h3>
+<p>Add content to the folder using either readable objects (e.g.
+<code>StringIO</code>) or file paths (e.g. <code>'a/path/to/some/file'</code>).</p>
+<pre><code class="language-python">from io import StringIO
+
+some_content = StringIO('some content')
+
+address = fs.put(some_content)
+
+# Or if you'd like to save the file with an extension...
+address = fs.put(some_content, '.txt')
+
+# Put all files in a directory
+for srcpath, address in fs.putdir(&quot;dir&quot;):
+    #...
+
+# Put all files in a directory tree recursively
+for srcpath, address in fs.putdir(&quot;dir&quot;, recursive=True):
+    #...
+
+# Put all files in a directory tree using same extensions
+for srcpath, address in fs.putdir(&quot;dir&quot;, extensions=True):
+    # address.abspath will have same file extension as srcpath
+
+# The id of the file (i.e. the hexdigest of its contents).
+address.id
+
+# The absolute path where the file was saved.
+address.abspath
+
+# The path relative to fs.root.
+address.relpath
+
+# Whether the file previously existed.
+address.is_duplicate
+</code></pre>
+<h3 id="retrieving-file-address">Retrieving File Address</h3>
+<p>Get a file\'s <code>HashAddress</code> by address ID or path. This address would be
+identical to the address returned by <code>put()</code>.</p>
+<pre><code class="language-python">assert fs.get(address.id) == address
+assert fs.get(address.relpath) == address
+assert fs.get(address.abspath) == address
+assert fs.get('invalid') is None
+</code></pre>
+<h3 id="retrieving-content">Retrieving Content</h3>
+<p>Get a <code>BufferedReader</code> handler for an existing file by address ID or
+path.</p>
+<pre><code class="language-python">fileio = fs.open(address.id)
+
+# Or using the full path...
+fileio = fs.open(address.abspath)
+
+# Or using a path relative to fs.root
+fileio = fs.open(address.relpath)
+</code></pre>
+<p><strong>NOTE:</strong> When getting a file that was saved with an extension, it\'s
+not necessary to supply the extension. Extensions are ignored when
+looking for a file based on the ID or path.</p>
+<h3 id="removing-content">Removing Content</h3>
+<p>Delete a file by address ID or path.</p>
+<pre><code class="language-python">fs.delete(address.id)
+fs.delete(address.abspath)
+fs.delete(address.relpath)
+</code></pre>
+<p><strong>NOTE:</strong> When a file is deleted, any parent directories above the file
+will also be deleted if they are empty directories.</p>
+<h2 id="advanced-usage">Advanced Usage</h2>
+<p>Below are some of the more advanced features of <code>EverCas</code>.</p>
+<h3 id="repairing-files">Repairing Files</h3>
+<p>The <code>EverCas</code> files may not always be in sync with it\'s <code>depth</code>,
+<code>width</code>, or <code>algorithm</code> settings (e.g. if <code>EverCas</code> takes ownership of a
+directory that wasn\'t previously stored using content hashes or if the
+<code>EverCas</code> settings change). These files can be easily reindexed using
+<code>repair()</code>.</p>
+<pre><code class="language-python">repaired = fs.repair()
+
+# Or if you want to drop file extensions...
+repaired = fs.repair(extensions=False)
+</code></pre>
+<p><strong>WARNING:</strong> It\'s recommended that a backup of the directory be made
+before repairing just in case something goes wrong.</p>
+<h3 id="walking-corrupted-files">Walking Corrupted Files</h3>
+<p>Instead of actually repairing the files, you can iterate over them for
+custom processing.</p>
+<pre><code class="language-python">for corrupted_path, expected_address in fs.corrupted():
+    # do something
+</code></pre>
+<p><strong>WARNING:</strong> <code>EverCas.corrupted()</code> is a generator so be aware that
+modifying the file system while iterating could have unexpected results.</p>
+<h3 id="walking-all-files">Walking All Files</h3>
+<p>Iterate over files.</p>
+<pre><code class="language-python">for file in fs.files():
+    # do something
+
+# Or using the class' iter method...
+for file in fs:
+    # do something
+</code></pre>
+<p>Iterate over folders that contain files (i.e. ignore the nested
+subfolders that only contain folders).</p>
+<pre><code class="language-python">for folder in fs.folders():
+    # do something
+</code></pre>
+<h3 id="computing-size">Computing Size</h3>
+<p>Compute the size in bytes of all files in the <code>root</code> directory.</p>
+<pre><code class="language-python">total_bytes = fs.size()
+</code></pre>
+<p>Count the total number of files.</p>
+<pre><code class="language-python">total_files = fs.count()
+
+# Or via len()...
+total_files = len(fs)
+</code></pre>
+<h3 id="hard-linking-files">Hard-linking files</h3>
+<p>You can use the built-in \"link\" put strategy to hard-link files into
+the EverCas directory if the platform and filesystem support it. This
+will automatically and silently fall back to copying if a hard-link
+can\'t be made, e.g. because the source is on a different device, the
+EverCas directory is on a filesystem that does not support hard links or
+the source file already has the operating system\'s maximum allowed
+number of hard links to it.</p>
+<pre><code class="language-python">newpath = fs.put(&quot;file/path&quot;, put_strategy=&quot;link&quot;).abspath
+assert os.path.samefile(&quot;file/path&quot;, newpath)
+</code></pre>
+<h3 id="custom-put-strategy">Custom Put Strategy</h3>
+<p>Fine-grained control over how each file or file-like object is stored in
+the underlying filesytem.</p>
+<pre><code class="language-python"># Implement your own put strategy
+def my_put_strategy(evercas, src_stream, dst_path):
+    # src_stream is the source data to insert
+    # it is a EverCas.Stream object, which is a Python file-like object
+    # Stream objects also expose the filesystem path of the underlying
+    # file via the src_stream.name property
+
+    # dst_path is the path generated by EverCas, based on the hash of the
+    # source data
+
+    # src_stream.name will be None if there is not an underlying file path
+    # available (e.g. a StringIO was passed or some other non-file
+    # file-like)
+    # Its recommended to check name property is available before using
+    if src_stream.name:
+        # Example: rename files instead of copying
+        # (be careful with underlying file paths, make sure to test your
+        # implementation before using it).
+        os.rename(src_stream.name, dst_path)
+        # You can also access properties and methods of the EverCas instance
+        # using the evercas parameter
+        os.chmod(dst_path, EverCas.fmode)
+    else:
+        # The default put strategy is available for use as
+        # PutStrategies.copy
+        # You can manually call other strategies if you want fallbacks
+        # (recommended)
+        PutStrategies.copy(EverCas, src_stream, dst_path)
+
+# And use it like:
+fs.put(&quot;myfile&quot;, put_strategy=my_put_strategy)
+</code></pre>
+<p>For more details, please see the full documentation at
+<a href="http://evercas.readthedocs.org">http://evercas.readthedocs.org</a>.</p>
+<h3 id="acknowledgements">Acknowledgements</h3>
+<p>This software is based on HashFS, made by @dgilland with @x11x contributions, and inspired by parts of dud, by @kevin-hanselman.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="api/" class="btn btn-neutral float-right" title="API Reference">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/weedonandscott/evercas" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+    
+      <span><a href="api/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '.';</script>
+    <script src="js/theme_extra.js" defer></script>
+    <script src="js/theme.js" defer></script>
+      <script src="search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 1.4.2
+Build Date UTC : 2023-02-08 22:43:29.091879+00:00
+-->
