@@ -60,8 +60,9 @@ htmlcov
 .pydevproject
 .idea
 
-# Sphinx documentation
+# documentation
 docs/_build/
+site/
 
 # PyBuilder
 target/
