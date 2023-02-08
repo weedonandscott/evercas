@@ -42,3 +42,10 @@ else:
         if not isinstance(text, string_types):
             text = text_type(text)
         return text
+
+
+try:
+    is_callable = callable
+except:
+    def is_callable(fn):
+        return hasattr(fn, '__call__')

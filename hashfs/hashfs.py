@@ -2,17 +2,17 @@
 """
 
 from collections import namedtuple
-from contextlib import contextmanager, closing
+from contextlib import closing
 import glob
 import hashlib
-import sys
 import io
 import os
+import errno
 import shutil
 from tempfile import NamedTemporaryFile
 
 from .utils import issubdir, shard
-from ._compat import to_bytes, walk, FileExistsError
+from ._compat import to_bytes, walk, FileExistsError, is_callable
 
 
 class HashFS(object):
@@ -33,10 +33,20 @@ class HashFS(object):
         dmode (int, optional): Directory mode permission to set for
             subdirectories. Defaults to ``0o755`` which allows owner/group to
             read/write and everyone else to read and everyone to execute.
+        put_strategy (mixed, optional): Default ``put_strategy`` for
+            :meth:`put` method. See :meth:`put` for more information. Defaults
+            to :attr:`PutStrategies.copy`.
     """
 
     def __init__(
-        self, root, depth=4, width=1, algorithm="sha256", fmode=0o664, dmode=0o755
+        self,
+        root,
+        depth=4,
+        width=1,
+        algorithm="sha256",
+        fmode=0o664,
+        dmode=0o755,
+        put_strategy=None,
     ):
         self.root = os.path.realpath(root)
         self.depth = depth
@@ -44,8 +54,9 @@ class HashFS(object):
         self.algorithm = algorithm
         self.fmode = fmode
         self.dmode = dmode
+        self.put_strategy = PutStrategies.get(put_strategy) or PutStrategies.copy
 
-    def put(self, file, extension=None):
+    def put(self, file, extension=None, put_strategy=None, simulate=False):
         """Store contents of `file` on disk using its content hash for the
         address.
 
@@ -53,6 +64,24 @@ class HashFS(object):
             file (mixed): Readable object or path to file.
             extension (str, optional): Optional extension to append to file
                 when saving.
+            put_strategy (mixed, optional): The strategy to use for adding
+                files; may be a function or the string name of one of the
+                built-in put strategies declared in :class:`PutStrategies`
+                class. Defaults to :attr:`PutStrategies.copy`.
+            simulate (bool, optional): Return the :class:`HashAddress` of the
+                file that would be appended but don't do anything.
+
+        Put strategies are functions ``(hashfs, stream, filepath)`` where
+        ``hashfs`` is the :class:`HashFS` instance from which :meth:`put` was
+        called; ``stream`` is the :class:`Stream` object representing the
+        data to add; and ``filepath`` is the string absolute file path inside
+        the HashFS where it needs to be saved. The put strategy function should
+        create the path ``filepath`` containing the data in ``stream``.
+
+        There are currently two built-in put strategies: "copy" (the default)
+        and "link". "link" attempts to hard link the file into the HashFS if
+        the platform and underlying filesystem support it, and falls back to
+        "copy" behaviour.
 
         Returns:
             HashAddress: File's hash address.
@@ -61,27 +90,23 @@ class HashFS(object):
 
         with closing(stream):
             id = self.computehash(stream)
-            filepath, is_duplicate = self._copy(stream, id, extension)
+            filepath = self.idpath(id, extension)
+
+            # Only move file if it doesn't already exist.
+            if not os.path.isfile(filepath):
+                is_duplicate = False
+                if not simulate:
+                    self.makepath(os.path.dirname(filepath))
+                    put_strategy = (
+                        PutStrategies.get(put_strategy)
+                        or self.put_strategy
+                        or PutStrategies.copy
+                    )
+                    put_strategy(self, stream, filepath)
+            else:
+                is_duplicate = True
 
         return HashAddress(id, self.relpath(filepath), filepath, is_duplicate)
-
-    def _copy(self, stream, id, extension=None):
-        """Copy the contents of `stream` onto disk with an optional file
-        extension appended. The copy process uses a temporary file to store the
-        initial contents and then moves that file to it's final location.
-        """
-        filepath = self.idpath(id, extension)
-
-        if not os.path.isfile(filepath):
-            # Only move file if it doesn't already exist.
-            is_duplicate = False
-            fname = self._mktempfile(stream)
-            self.makepath(os.path.dirname(filepath))
-            shutil.move(fname, filepath)
-        else:
-            is_duplicate = True
-
-        return (filepath, is_duplicate)
 
     def _mktempfile(self, stream):
         """Create a named temporary file from a :class:`Stream` object and
@@ -191,8 +216,7 @@ class HashFS(object):
                 yield folder
 
     def count(self):
-        """Return count of the number of files in the :attr:`root` directory.
-        """
+        """Return count of the number of files in the :attr:`root` directory."""
         count = 0
         for _ in self:
             count += 1
@@ -348,8 +372,7 @@ class HashFS(object):
         return self.files()
 
     def __len__(self):
-        """Return count of the number of files in the :attr:`root` directory.
-        """
+        """Return count of the number of files in the :attr:`root` directory."""
         return self.count()
 
 
@@ -400,6 +423,17 @@ class Stream(object):
         except Exception:
             buffer_size = 8192
 
+        try:
+            # Expose the original file path if available.
+            # This allows put strategies to use OS functions, working with
+            # paths, instead of being limited to the API provided by Python
+            # file-like objects
+            # name property can also hold int fd, so we make it None in that
+            # case
+            self.name = None if isinstance(obj.name, int) else obj.name
+        except AttributeError:
+            self.name = None
+
         self._obj = obj
         self._pos = pos
         self._buffer_size = buffer_size
@@ -429,3 +463,64 @@ class Stream(object):
             self._obj.close()
         else:
             self._obj.seek(self._pos)
+
+
+class PutStrategies:
+    """Namespace for built-in put strategies.
+
+    Should not be instantiated. Use the :meth:`get` static method to look up a
+    strategy by name, or directly reference one of the included class methods.
+    """
+
+    @classmethod
+    def get(cls, method):
+        """Look up a stragegy by name string. You can also pass a function
+        which will be returned as is."""
+        if method:
+            if method == "get":
+                raise ValueError("invalid put strategy name, 'get'")
+            return method if is_callable(method) else getattr(cls, method)
+
+    @staticmethod
+    def copy(hashfs, src_stream, dst_path):
+        """The default copy put strategy, writes the file object to a
+        temporary file on disk and then moves it into place."""
+        shutil.move(hashfs._mktempfile(src_stream), dst_path)
+
+    if hasattr(os, "link"):
+
+        @classmethod
+        def link(cls, hashfs, src_stream, dst_path):
+            """Use os.link if available to create a hard link to the original
+            file if the HashFS and the original file reside on the same
+            filesystem and the filesystem supports hard links."""
+            # Get the original file path exposed by the Stream instance
+            src_path = src_stream.name
+            # No path available because e.g. a StringIO was used
+            if not src_path:
+                # Just copy
+                return cls.copy(hashfs, src_stream, dst_path)
+
+            try:
+                # Try to create the hard link
+                os.link(src_path, dst_path)
+            except EnvironmentError as e:
+                # These are link specific errors. If any of these 3 are raised
+                # we try to copy instead
+                # EMLINK - src already has the maximum number of links to it
+                # EXDEV - invalid cross-device link
+                # EPERM - the dst filesystem does not support hard links
+                # (note EPERM could also be another permissions error; these
+                # will be raised again when we try to copy)
+                if e.errno not in (errno.EMLINK, errno.EXDEV, errno.EPERM):
+                    raise
+                return cls.copy(hashfs, src_stream, dst_path)
+            else:
+                # After creating the hard link, make sure it has the correct
+                # file permissions
+                os.chmod(dst_path, hashfs.fmode)
+
+    else:
+        # Platform does not support os.link, so use the default copy strategy
+        # instead
+        link = copy
