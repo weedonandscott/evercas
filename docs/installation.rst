@@ -1,10 +1,10 @@
 Installation
 ============
 
-hashfs requires Python >= 2.7 or >= 3.3.
+evercas requires Python >= 2.7 or >= 3.3.
 
-To install from `PyPI <https://pypi.python.org/pypi/hashfs>`_:
+To install from `PyPI <https://pypi.python.org/pypi/evercas>`_:
 
 ::
 
-    pip install hashfs
+    pip install evercas

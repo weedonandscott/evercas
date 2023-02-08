@@ -5,8 +5,8 @@ API Reference
 
 .. testsetup::
 
-    from hashfs import *
+    from evercas import *
 
 
-.. automodule:: hashfs
+.. automodule:: evercas
     :members:

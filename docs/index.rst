@@ -1,4 +1,4 @@
-.. hashfs documentation master file
+.. evercas documentation master file
 
 .. include:: ../README.rst
 

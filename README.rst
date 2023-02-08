@@ -1,11 +1,11 @@
 ******
-HashFS
+EverCas
 ******
 
 |version| |travis| |coveralls| |license|
 
 
-HashFS is a content-addressable file management system. What does that mean? Simply, that HashFS manages a directory where files are saved based on the file's hash.
+EverCas is a content-addressable file management system. What does that mean? Simply, that EverCas manages a directory where files are saved based on the file's hash.
 
 Typical use cases for this kind of system are ones where:
 
@@ -24,16 +24,15 @@ Features
 - Able to repair the root folder by reindexing all files. Useful if the hashing algorithm or folder structure options change or to initialize existing files.
 - Supports any hashing algorithm available via ``hashlib.new``.
 - Python 3.10+ compatible.
-- Support for hard-linking files into the HashFS-managed directory on compatible filesystems
+- Support for hard-linking files into the EverCas-managed directory on compatible filesystems
 
 
 Links
 =====
 
-- Project: https://github.com/dgilland/hashfs
-- Documentation: http://hashfs.readthedocs.org
-- PyPI: https://pypi.python.org/pypi/hashfs/
-- TravisCI: https://travis-ci.org/dgilland/hashfs
+- Project: https://github.com/weedonandscott/evercas
+- Documentation: http://evercas.readthedocs.org
+- PyPI: https://pypi.python.org/pypi/evercas/
 
 
 Quickstart
@@ -44,7 +43,7 @@ Install using pip:
 
 ::
 
-    pip install hashfs
+    pip install evercas
 
 
 Initialization
@@ -52,23 +51,23 @@ Initialization
 
 .. code-block:: python
 
-    from hashfs import HashFS
+    from evercas import EverCas
 
 
-Designate a root folder for ``HashFS``. If the folder doesn't already exist, it will be created.
+Designate a root folder for ``EverCas``. If the folder doesn't already exist, it will be created.
 
 
 .. code-block:: python
 
     # Set the `depth` to the number of subfolders the file's hash should be split when saving.
     # Set the `width` to the desired width of each subfolder.
-    fs = HashFS('temp_hashfs', depth=4, width=1, algorithm='sha256')
+    fs = EverCas('temp_evercas', depth=4, width=1, algorithm='sha256')
 
     # With depth=4 and width=1, files will be saved in the following pattern:
-    # temp_hashfs/a/b/c/d/efghijklmnopqrstuvwxyz
+    # temp_evercas/a/b/c/d/efghijklmnopqrstuvwxyz
 
     # With depth=3 and width=2, files will be saved in the following pattern:
-    # temp_hashfs/ab/cd/ef/ghijklmnopqrstuvwxyz
+    # temp_evercas/ab/cd/ef/ghijklmnopqrstuvwxyz
 
 
 **NOTE:** The ``algorithm`` value should be a valid string argument to ``hashlib.new()``.
@@ -77,7 +76,7 @@ Designate a root folder for ``HashFS``. If the folder doesn't already exist, it 
 Basic Usage
 ===========
 
-``HashFS`` supports basic file storage, retrieval, and removal as well as some more advanced features like file repair.
+``EverCas`` supports basic file storage, retrieval, and removal as well as some more advanced features like file repair.
 
 
 Storing Content
@@ -174,13 +173,13 @@ Delete a file by address ID or path.
 Advanced Usage
 ==============
 
-Below are some of the more advanced features of ``HashFS``.
+Below are some of the more advanced features of ``EverCas``.
 
 
 Repairing Files
 ---------------
 
-The ``HashFS`` files may not always be in sync with it's ``depth``, ``width``, or ``algorithm`` settings (e.g. if ``HashFS`` takes ownership of a directory that wasn't previously stored using content hashes or if the ``HashFS`` settings change). These files can be easily reindexed using ``repair()``.
+The ``EverCas`` files may not always be in sync with it's ``depth``, ``width``, or ``algorithm`` settings (e.g. if ``EverCas`` takes ownership of a directory that wasn't previously stored using content hashes or if the ``EverCas`` settings change). These files can be easily reindexed using ``repair()``.
 
 
 .. code-block:: python
@@ -206,7 +205,7 @@ Instead of actually repairing the files, you can iterate over them for custom pr
         # do something
 
 
-**WARNING:** ``HashFS.corrupted()`` is a generator so be aware that modifying the file system while iterating could have unexpected results.
+**WARNING:** ``EverCas.corrupted()`` is a generator so be aware that modifying the file system while iterating could have unexpected results.
 
 
 Walking All Files
@@ -260,9 +259,9 @@ Hard-linking files
 ------------------
 
 You can use the built-in "link" put strategy to hard-link files into the
-HashFS directory if the platform and filesystem support it. This will
+EverCas directory if the platform and filesystem support it. This will
 automatically and silently fall back to copying if a hard-link can't be
-made, e.g. because the source is on a different device, the HashFS directory
+made, e.g. because the source is on a different device, the EverCas directory
 is on a filesystem that does not support hard links or the source file
 already has the operating system's maximum allowed number of hard links to
 it.
@@ -282,13 +281,13 @@ underlying filesytem.
 .. code-block:: python
 
     # Implement your own put strategy
-    def my_put_strategy(hashfs, src_stream, dst_path):
+    def my_put_strategy(evercas, src_stream, dst_path):
         # src_stream is the source data to insert
-        # it is a hashfs.Stream object, which is a Python file-like object
+        # it is a EverCas.Stream object, which is a Python file-like object
         # Stream objects also expose the filesystem path of the underlying
         # file via the src_stream.name property
 
-        # dst_path is the path generated by HashFS, based on the hash of the
+        # dst_path is the path generated by EverCas, based on the hash of the
         # source data
 
         # src_stream.name will be None if there is not an underlying file path
@@ -300,32 +299,24 @@ underlying filesytem.
             # (be careful with underlying file paths, make sure to test your
             # implementation before using it).
             os.rename(src_stream.name, dst_path)
-            # You can also access properties and methods of the HashFS instance
-            # using the hashfs parameter
-            os.chmod(dst_path, hashfs.fmode)
+            # You can also access properties and methods of the EverCas instance
+            # using the evercas parameter
+            os.chmod(dst_path, EverCas.fmode)
         else:
             # The default put strategy is available for use as
             # PutStrategies.copy
             # You can manually call other strategies if you want fallbacks
             # (recommended)
-            PutStrategies.copy(hashfs, src_stream, dst_path)
+            PutStrategies.copy(EverCas, src_stream, dst_path)
 
     # And use it like:
     fs.put("myfile", put_strategy=my_put_strategy)
 
 
-For more details, please see the full documentation at http://hashfs.readthedocs.org.
+For more details, please see the full documentation at http://evercas.readthedocs.org.
 
 
+Acknoledgements
+-------------------
 
-.. |version| image:: http://img.shields.io/pypi/v/hashfs.svg?style=flat-square
-    :target: https://pypi.python.org/pypi/hashfs/
-
-.. |travis| image:: http://img.shields.io/travis/dgilland/hashfs/master.svg?style=flat-square
-    :target: https://travis-ci.org/dgilland/hashfs
-
-.. |coveralls| image:: http://img.shields.io/coveralls/dgilland/hashfs/master.svg?style=flat-square
-    :target: https://coveralls.io/r/dgilland/hashfs
-
-.. |license| image:: http://img.shields.io/pypi/l/hashfs.svg?style=flat-square
-    :target: https://pypi.python.org/pypi/hashfs/
+This software is based on HashFS, made by @dgilland with @x11x contirbutions, and inspired by parts of dud, by @kevin-hanselman.

@@ -12,7 +12,7 @@ Types of Contributions
 Report Bugs
 +++++++++++
 
-Report bugs at https://github.com/dgilland/hashfs/issues.
+Report bugs at https://github.com/weedonandscott/evercas/issues.
 
 If you are reporting a bug, please include:
 
@@ -36,13 +36,13 @@ Look through the GitHub issues for features. Anything tagged with "enhancement" 
 Write Documentation
 +++++++++++++++++++
 
-HashFS could always use more documentation, whether as part of the official HashFS docs, in docstrings, or even on the web in blog posts, articles, and such.
+EverCas could always use more documentation, whether as part of the official EverCas docs, in docstrings, or even on the web in blog posts, articles, and such.
 
 
 Submit Feedback
 +++++++++++++++
 
-The best way to send feedback is to file an issue at https://github.com/dgilland/hashfs/issues.
+The best way to send feedback is to file an issue at https://github.com/weedonandscott/evercas/issues.
 
 If you are proposing a feature:
 
@@ -54,16 +54,16 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up ``hashfs`` for local development.
+Ready to contribute? Here's how to set up ``evercas`` for local development.
 
-1. Fork the ``hashfs`` repo on GitHub.
+1. Fork the ``evercas`` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone git@github.com:your_name_here/hashfs.git
+    $ git clone git@github.com:your_name_here/evercas.git
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenv installed, this is how you set up your fork for local development::
 
-    $ cd hashfs
+    $ cd evercas
     $ make build
 
 4. Create a branch for local development::

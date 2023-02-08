@@ -12,7 +12,7 @@ def read(fname):
 
 
 meta = {}
-exec(read("hashfs/__meta__.py"), meta)
+exec(read("evercas/__meta__.py"), meta)
 
 readme = read("README.rst")
 changes = read("CHANGES.rst")
@@ -58,7 +58,7 @@ setup(
     tests_require=meta["__tests_require__"],
     cmdclass={"test": Tox},
     test_suite="tests",
-    keywords="hashfs hash file system content addressable fixed storage",
+    keywords="evercas hash file system content addressable fixed storage",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",

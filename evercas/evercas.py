@@ -1,4 +1,4 @@
-"""Module for HashFS class.
+"""Module for EverCas class.
 """
 
 from collections import namedtuple
@@ -14,7 +14,7 @@ from tempfile import NamedTemporaryFile
 from .utils import issubdir, shard
 
 
-class HashFS(object):
+class EverCas(object):
     """Content addressable file manager.
 
     Attributes:
@@ -74,15 +74,15 @@ class HashFS(object):
             simulate (bool, optional): Return the :class:`HashAddress` of the
                 file that would be appended but don't do anything.
 
-        Put strategies are functions ``(hashfs, stream, filepath)`` where
-        ``hashfs`` is the :class:`HashFS` instance from which :meth:`put` was
+        Put strategies are functions ``(evercas, stream, filepath)`` where
+        ``evercas`` is the :class:`EverCas` instance from which :meth:`put` was
         called; ``stream`` is the :class:`Stream` object representing the
         data to add; and ``filepath`` is the string absolute file path inside
-        the HashFS where it needs to be saved. The put strategy function should
+        the EverCas where it needs to be saved. The put strategy function should
         create the path ``filepath`` containing the data in ``stream``.
 
         There are currently two built-in put strategies: "copy" (the default)
-        and "link". "link" attempts to hard link the file into the HashFS if
+        and "link". "link" attempts to hard link the file into the EverCas if
         the platform and underlying filesystem support it, and falls back to
         "copy" behaviour.
 
@@ -437,7 +437,7 @@ class HashAddress(
 
     Attributes:
         id (str): Hash ID (hexdigest) of file contents.
-        relpath (str): Relative path location to :attr:`HashFS.root`.
+        relpath (str): Relative path location to :attr:`EverCas.root`.
         abspath (str): Absoluate path location of file on disk.
         is_duplicate (boolean, optional): Whether the hash address created was
             a duplicate of a previously existing file. Can only be ``True``
@@ -536,24 +536,24 @@ class PutStrategies:
             return method if callable(method) else getattr(cls, method)
 
     @staticmethod
-    def copy(hashfs, src_stream, dst_path):
+    def copy(evercas, src_stream, dst_path):
         """The default copy put strategy, writes the file object to a
         temporary file on disk and then moves it into place."""
-        shutil.move(hashfs._mktempfile(src_stream), dst_path)
+        shutil.move(evercas._mktempfile(src_stream), dst_path)
 
     if hasattr(os, "link"):
 
         @classmethod
-        def link(cls, hashfs, src_stream, dst_path):
+        def link(cls, evercas, src_stream, dst_path):
             """Use os.link if available to create a hard link to the original
-            file if the HashFS and the original file reside on the same
+            file if the EverCas and the original file reside on the same
             filesystem and the filesystem supports hard links."""
             # Get the original file path exposed by the Stream instance
             src_path = src_stream.name
             # No path available because e.g. a StringIO was used
             if not src_path:
                 # Just copy
-                return cls.copy(hashfs, src_stream, dst_path)
+                return cls.copy(evercas, src_stream, dst_path)
 
             try:
                 # Try to create the hard link
@@ -568,11 +568,11 @@ class PutStrategies:
                 # will be raised again when we try to copy)
                 if e.errno not in (errno.EMLINK, errno.EXDEV, errno.EPERM):
                     raise
-                return cls.copy(hashfs, src_stream, dst_path)
+                return cls.copy(evercas, src_stream, dst_path)
             else:
                 # After creating the hard link, make sure it has the correct
                 # file permissions
-                os.chmod(dst_path, hashfs.fmode)
+                os.chmod(dst_path, evercas.fmode)
 
     else:
         # Platform does not support os.link, so use the default copy strategy
