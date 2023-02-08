@@ -2,10 +2,9 @@
 """
 
 from collections import namedtuple
-from contextlib import contextmanager, closing
+from contextlib import closing
 import glob
 import hashlib
-import sys
 import io
 import os
 import errno
