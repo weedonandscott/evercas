@@ -1,8 +1,6 @@
-******
-EverCas
-******
-
-|version| |travis| |coveralls| |license|
+================
+ EverCas
+================
 
 
 EverCas is a content-addressable file management system. What does that mean? Simply, that EverCas manages a directory where files are saved based on the file's hash.
@@ -268,6 +266,7 @@ it.
 
 
 .. code-block:: python
+
     newpath = fs.put("file/path", put_strategy="link").abspath
     assert os.path.samefile("file/path", newpath)
 
@@ -319,4 +318,4 @@ For more details, please see the full documentation at http://evercas.readthedoc
 Acknoledgements
 -------------------
 
-This software is based on HashFS, made by @dgilland with @x11x contirbutions, and inspired by parts of dud, by @kevin-hanselman.
+This software is based on HashFS, made by @dgilland with @x11x contrgibutions, and inspired by parts of dud, by @kevin-hanselman.

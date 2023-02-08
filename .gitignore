@@ -20,6 +20,7 @@ var/
 sdist/
 develop-eggs/
 .installed.cfg
+__pypackages__/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

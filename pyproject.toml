@@ -1,0 +1,47 @@
+[project]
+name = "evercas"
+version = "0.8.0"
+description = "Cloneable (with rclone) content-addressable storage for Python"
+authors = [
+    {name = "Weedon & Scott Studios", email = "Studios@WeedonAndScott.com"},
+]
+dependencies = []
+requires-python = ">=3.10"
+readme = "README.rst"
+license = {text = "MIT"}
+keywords = ["evercas hash file system content addressable fixed storage"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Filesystems",
+]
+
+[project.urls]
+Homepage = "https://github.com/weedonandscott/evercas"
+
+[build-system]
+requires = ["pdm-pep517>=1.0.0"]
+build-backend = "pdm.pep517.api"
+
+[tool.pdm]
+[tool.pdm.dev-dependencies]
+lint = [
+    "flake8==6.0.0",
+]
+test = [
+    "pytest==7.2.1",
+    "pytest-cov==4.0.0",
+]
+distribute = [
+    "twine==4.0.2",
+]
+docs = [
+    "Sphinx==6.1.3",
+    "sphinx-rtd-theme==1.2.0",
+]

@@ -72,19 +72,15 @@ Ready to contribute? Here's how to set up ``evercas`` for local development.
 
    Now you can make your changes locally.
 
-5. When you're done making changes, check that your changes pass linting (`PEP8`_ and pylint) and the tests, including testing other Python versions with tox::
+5. When you're done making changes, check that your changes pass linting (`PEP8`_ and pylint) and the tests, including testing other Python versions
 
-    $ make test-full
-
-6. Add yourself to ``AUTHORS.rst``.
-
-7. Commit your changes and push your branch to GitHub::
+6. Commit your changes and push your branch to GitHub::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-8. Submit a pull request through the GitHub website.
+7. Submit a pull request through the GitHub website.
 
 
 Pull Request Guidelines

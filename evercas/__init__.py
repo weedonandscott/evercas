@@ -10,16 +10,6 @@ Typical use cases for this kind of system are ones where:
 - File metadata is stored elsewhere (e.g. in a database).
 """
 
-from .__meta__ import (
-    __title__,
-    __summary__,
-    __url__,
-    __version__,
-    __author__,
-    __email__,
-    __license__,
-)
-
 from .evercas import EverCas, HashAddress
 
 
