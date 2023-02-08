@@ -94,7 +94,7 @@ Before you submit a pull request, check that it meets these guidelines:
 
 1. The pull request should include tests.
 2. If the pull request adds functionality, the docs should be updated. Put your new functionality into a function with a docstring, and add the feature to the README.rst.
-3. The pull request should work for Python 2.7, 3.3, and 3.4. Check https://travis-ci.org/dgilland/hashfs/pull_requests and make sure that the tests pass for all supported Python versions.
+3. Make sure that the tests pass for all supported Python versions.
 
 
 Project CLI

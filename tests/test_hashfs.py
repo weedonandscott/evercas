@@ -9,8 +9,7 @@ import py
 import pytest
 
 import hashfs
-from hashfs._compat import to_bytes
-from hashfs.hashfs import PutStrategies
+from hashfs.hashfs import PutStrategies, to_bytes
 
 
 @pytest.fixture

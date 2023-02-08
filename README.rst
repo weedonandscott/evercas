@@ -23,8 +23,8 @@ Features
 - Pluggable put strategies, allowing fine-grained control of how files are added.
 - Able to repair the root folder by reindexing all files. Useful if the hashing algorithm or folder structure options change or to initialize existing files.
 - Supports any hashing algorithm available via ``hashlib.new``.
-- Python 2.7+/3.3+ compatible.
-- Support for hard-linking files into the HashFS-managed directory on compatible filesystems (Windows support requires >= Python 3.2, all other platforms should be fully supported)
+- Python 3.10+ compatible.
+- Support for hard-linking files into the HashFS-managed directory on compatible filesystems
 
 
 Links

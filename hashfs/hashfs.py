@@ -12,7 +12,6 @@ import shutil
 from tempfile import NamedTemporaryFile
 
 from .utils import issubdir, shard
-from ._compat import to_bytes, walk, FileExistsError, is_callable, list_dir_files
 
 
 class HashFS(object):
@@ -237,7 +236,7 @@ class HashFS(object):
         """Return generator that yields all folders in the :attr:`root`
         directory that contain files.
         """
-        for folder, subfolders, files in walk(self.root):
+        for folder, subfolders, files in os.walk(self.root):
             if files:
                 yield folder
 
@@ -404,12 +403,31 @@ class HashFS(object):
 
 def find_files(path, recursive=False):
     if recursive:
-        for folder, subfolders, files in walk(path):
+        for folder, subfolders, files in os.walk(path):
             for file in files:
                 yield os.path.join(folder, file)
     else:
         for file in list_dir_files(path):
             yield file
+
+
+def list_dir_files(path):
+    it = os.scandir(path)
+    try:
+        for file in it:
+            if file.is_file():
+                yield file.path
+    finally:
+        try:
+            it.close()
+        except AttributeError:
+            pass
+
+
+def to_bytes(text):
+    if not isinstance(text, bytes):
+        text = bytes(text, "utf8")
+    return text
 
 
 class HashAddress(
@@ -515,7 +533,7 @@ class PutStrategies:
         if method:
             if method == "get":
                 raise ValueError("invalid put strategy name, 'get'")
-            return method if is_callable(method) else getattr(cls, method)
+            return method if callable(method) else getattr(cls, method)
 
     @staticmethod
     def copy(hashfs, src_stream, dst_path):
