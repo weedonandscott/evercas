@@ -58,7 +58,7 @@ class EverCas(object):
         self,
         file: BinaryIO | str,
         put_strategy: str | None = None,
-        simulate: bool = False,
+        dry_run: bool = False,
     ):
         """Store contents of `file` on disk using its content hash for the
         address.
@@ -69,7 +69,7 @@ class EverCas(object):
                 files; may be a function or the string name of one of the
                 built-in put strategies declared in :class:`PutStrategies`
                 class. Defaults to :attr:`PutStrategies.copy`.
-            simulate (bool, optional): Return the :class:`HashAddress` of the
+            dry_run (bool, optional): Return the :class:`HashAddress` of the
                 file that would be appended but don't do anything.
 
         Put strategies are functions ``(evercas, stream, filepath)`` where
@@ -96,7 +96,7 @@ class EverCas(object):
             # Only move file if it doesn't already exist.
             if not os.path.isfile(filepath):
                 is_duplicate = False
-                if not simulate:
+                if not dry_run:
                     self.makepath(os.path.dirname(filepath))
                     put_strategy_callable = (
                         PutStrategies.get(put_strategy)
@@ -114,7 +114,7 @@ class EverCas(object):
         root: str,
         recursive: bool = False,
         put_strategy: str | None = None,
-        simulate: bool = False,
+        dry_run: bool = False,
     ):
         """Put all files from a directory.
 
@@ -123,12 +123,12 @@ class EverCas(object):
             recursive (bool, optional): Find files recursively in ``root``.
                 Defaults to ``False``.
             put_strategy (mixed, optional): same as :meth:`put`.
-            simulate (boo, optional): same as :meth:`put`.
+            dry_run (boo, optional): same as :meth:`put`.
 
         Yields :class:`HashAddress`es for all added files.
         """
         for file in find_files(root, recursive=recursive):
-            address = self.put(file, put_strategy=put_strategy, simulate=simulate)
+            address = self.put(file, put_strategy=put_strategy, dry_run=dry_run)
             yield (file, address)
 
     def mktempfile(self, stream: Stream):
