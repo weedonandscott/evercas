@@ -8,6 +8,9 @@
 - BREAKING: Remove extension preservation on stored blobs
 - BREAKING: Only store relative path in `HashAddress`
 - BREAKING: replace own `Stream` class with `anyio.Path`. Many of the methods are now `async`
+- BREAKING: expand use of `anyio.Path` to other class members. More of the methods are `async`, notably:
+    - The self iterator is now async
+    - `count()` is async, and so `__len__` has been removed
 - Some minor internal refactoring
 
 ## v0.8.1

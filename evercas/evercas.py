@@ -4,24 +4,26 @@
 from __future__ import annotations
 
 import errno
-import io
 import os
+import pathlib
 import shutil
 from dataclasses import dataclass
 from tempfile import NamedTemporaryFile
-from typing import Callable
+from typing import AsyncGenerator, Callable, Literal
 
 import anyio
 from blake3 import blake3
 
-from .utils import issubdir, shard
+from .utils import shard
+
+PathLikeArg = str | os.PathLike[str]
 
 
 class EverCas(object):
     """Content addressable file manager.
 
     Attributes:
-        root (str): Directory path used as root of storage space.
+        root (str | os.PathLike[str]): Directory path used as root of storage space.
         prefix_depth (int, optional): Number of prefix folder to create when saving a
             file.
         prefix_width (int, optional): Width of each prefix folder to create when saving
@@ -40,14 +42,20 @@ class EverCas(object):
 
     def __init__(
         self,
-        root: str,
+        root: PathLikeArg,
         prefix_depth: int = 1,
         prefix_width: int = 2,
         fmode: int = 0o400,
         dmode: int = 0o700,
         put_strategy: str | None = None,
     ):
-        self.root = os.path.realpath(root)
+        # use `pathlib` for the sync `resolve()`
+        temp_path = pathlib.Path(root)
+        if not self.root.is_absolute():
+            raise ValueError("Store root must be an absolute path")
+        temp_path = temp_path.resolve()
+        self.root = anyio.Path(temp_path)
+
         self.prefix_depth = prefix_depth
         self.prefix_width = prefix_width
         self.fmode = fmode
@@ -56,10 +64,10 @@ class EverCas(object):
 
     async def put(
         self,
-        file: str | os.PathLike[str],
+        file: PathLikeArg,
         put_strategy: str | None = None,
         dry_run: bool = False,
-    ):
+    ) -> HashAddress:
         """Store contents of `file` on disk using its content hash for the
         address.
 
@@ -106,15 +114,15 @@ class EverCas(object):
         else:
             is_duplicate = True
 
-        return HashAddress(checksum, self.relpath(checksum_path), is_duplicate)
+        return HashAddress(checksum, str(self.relpath(checksum_path)), is_duplicate)
 
-    def putdir(
+    async def putdir(
         self,
-        root: str,
+        root: PathLikeArg,
         recursive: bool = False,
         put_strategy: str | None = None,
         dry_run: bool = False,
-    ):
+    ) -> AsyncGenerator[tuple[anyio.Path, HashAddress], None]:
         """Put all files from a directory.
 
         Args:
@@ -126,8 +134,8 @@ class EverCas(object):
 
         Yields :class:`HashAddress`es for all added files.
         """
-        for file in find_files(root, recursive=recursive):
-            address = self.put(file, put_strategy=put_strategy, dry_run=dry_run)
+        async for file in find_files(anyio.Path(root), recursive=recursive):
+            address = await self.put(file, put_strategy=put_strategy, dry_run=dry_run)
             yield (file, address)
 
     async def mktempfile(self, source_file_path: anyio.Path):
@@ -155,7 +163,7 @@ class EverCas(object):
 
         return tmp.name
 
-    def get(self, file: str):
+    def get(self, checksum: str) -> HashAddress | None:
         """Return :class:`HashAddress` from given checksum or path. If `file` does not
         refer to a valid file, then ``None`` is returned.
 
@@ -165,51 +173,56 @@ class EverCas(object):
         Returns:
             HashAddress: File's hash address.
         """
-        realpath = self.realpath(file)
 
-        if realpath is None:
-            return None
-        else:
-            return HashAddress(self.unshard(realpath), self.relpath(realpath))
+        # Check for sharded path.
+        filepath = self.checksum_path(checksum)
+        if filepath.is_file():
+            return HashAddress(checksum, str(self.relpath(filepath)))
 
-    def open(self, file: str, mode: str = "rb"):
-        """Return open buffer object from given checksum or path.
+        # Could not determine a match.
+        return None
+
+    def open(
+        self, checksum: str, mode: Literal["rb"] | Literal["r"] | Literal["rt"] = "rb"
+    ):
+        """Return open buffer object from given checksum.
+        Only `rb`, `r`, `rt` modes allowed.
 
         Args:
-            file (str): Checksum or path of file.
-            mode (str, optional): Mode to open file in. Defaults to ``'rb'``.
+            checksum (str): Checksum of file.
 
         Returns:
             Buffer: An ``io`` buffer dependent on the `mode`.
 
         Raises:
             IOError: If file doesn't exist.
+            ValueError: If given forbidden mode.
         """
-        realpath = self.realpath(file)
-        if realpath is None:
-            raise IOError("Could not locate file: {0}".format(file))
+        if mode not in ["rb", "r", "rt"]:
+            raise ValueError(f"Forbidden mode {mode}. Only `rb`, `r`, `rt` allowed.")
 
-        return io.open(realpath, mode)
+        address = self.get(checksum)
+        if address is None:
+            raise IOError(f"Could not locate checksum: {checksum}")
 
-    def delete(self, file: str):
-        """Delete file using checksum or path. Remove any empty directories after
-        deleting. No exception is raised if file doesn't exist.
+        return self.abspath(address.path).open(mode)
+
+    async def delete(self, checksum: str):
+        """Delete file using checksum. Remove any empty directories after deleting.
+        No exception is raised if file doesn't exist.
 
         Args:
             file (str): Checksum or path of file.
         """
-        realpath = self.realpath(file)
-        if realpath is None:
-            return
+        address = self.get(checksum)
+        if address is None:
+            return None
 
-        try:
-            os.remove(realpath)
-        except OSError:  # pragma: no cover
-            pass
-        else:
-            self.remove_empty(os.path.dirname(realpath))
+        await self.abspath(address.path).unlink(missing_ok=True)
 
-    def remove_empty(self, subpath: str):
+        await self.remove_empty(anyio.Path(address.path))
+
+    async def remove_empty(self, subpath: anyio.Path) -> None:
         """Successively remove all empty folders starting with `subpath` and
         proceeding "up" through directory tree until reaching the :attr:`root`
         folder.
@@ -219,18 +232,28 @@ class EverCas(object):
         if not self.haspath(subpath):
             return
 
-        while subpath != self.root:
-            if len(os.listdir(subpath)) > 0 or os.path.islink(subpath):
-                break
-            os.rmdir(subpath)
-            subpath = os.path.dirname(subpath)
+        normalized_path = await subpath.resolve()
 
-    def files(self):
+        is_dir = await normalized_path.is_dir()
+        is_symlink = await normalized_path.is_symlink()
+
+        if not is_dir or is_symlink:
+            return
+
+        async for _ in normalized_path.iterdir():
+            # `subpath` not empty
+            return
+
+        parent = normalized_path.parent
+        await normalized_path.rmdir()
+        await self.remove_empty(parent)
+
+    async def files(self):
         """Return generator that yields all files in the :attr:`root`
         directory.
         """
-        for file in find_files(self.root, recursive=True):
-            yield os.path.abspath(file)
+        async for async_path in find_files(self.root, recursive=True):
+            yield async_path
 
     def folders(self):
         """Return generator that yields all folders in the :attr:`root`
@@ -240,33 +263,33 @@ class EverCas(object):
             if files:
                 yield folder
 
-    def count(self):
+    async def count(self):
         """Return count of the number of files in the :attr:`root` directory."""
         count = 0
-        for _ in self:
+        async for _ in self:
             count += 1
         return count
 
-    def size(self):
+    async def size(self):
         """Return the total size in bytes of all files in the :attr:`root`
         directory.
         """
         total = 0
 
-        for path in self.files():
-            total += os.path.getsize(path)
+        async for path in self.files():
+            total += (await path.stat()).st_size
 
         return total
 
-    def exists(self, file: str):
-        """Check whether a given file checksum or path exists on disk."""
-        return bool(self.realpath(file))
+    def exists(self, checksum: str):
+        """Check whether a given file checksum exists on disk."""
+        return self.get(checksum) is not None
 
-    def haspath(self, path: str):
-        """Return whether `path` is a subdirectory of the :attr:`root`
+    def haspath(self, pathlike: PathLikeArg):
+        """Return whether `pathlike` is a subdirectory of the :attr:`root`
         directory.
         """
-        return issubdir(path, self.root)
+        return self.root in anyio.Path(pathlike).parents
 
     def makepath(self, path: str):
         """Physically create the folder path on disk."""
@@ -275,45 +298,22 @@ class EverCas(object):
         except FileExistsError:
             assert os.path.isdir(path), "expected {} to be a directory".format(path)
 
-    def relpath(self, path: str):
+    def relpath(self, path: anyio.Path) -> anyio.Path:
         """Return `path` relative to the :attr:`root` directory."""
-        return os.path.relpath(path, self.root)
+        return path.relative_to(self.root)
 
-    def abspath(self, path: str):
+    def abspath(self, path: str) -> anyio.Path:
         """Return absolute version of `path` in :attr:`root` directory."""
-        return os.path.normpath(os.path.join(self.root, path))
-
-    # TODO: rewrite
-    def realpath(self, file: str):
-        """Attempt to determine the real path of a file checksum or path through
-        successive checking of candidate paths.
-        """
-
-        # Check for absolute path.
-        if os.path.isfile(file):
-            return file
-
-        # Check for relative path.
-        relpath = os.path.join(self.root, file)
-        if os.path.isfile(relpath):
-            return relpath
-
-        # Check for sharded path.
-        filepath = self.checksum_path(file)
-        if os.path.isfile(filepath):
-            return filepath
-
-        # Could not determine a match.
-        return None
+        return self.root.joinpath(path)
 
     def checksum_path(
         self,
         checksum: str,
-    ):
+    ) -> anyio.Path:
         """Build the file path for a given checksum."""
         paths = self.shard(checksum)
 
-        return os.path.join(self.root, *paths)
+        return self.root.joinpath(*paths)
 
     async def compute_checksum(self, file: anyio.Path):
         """Compute checksum of file."""
@@ -341,21 +341,21 @@ class EverCas(object):
 
         return hasher.hexdigest()
 
-    def shard(self, checksum: str):
+    def shard(self, checksum: str) -> list[str]:
         """Shard checksum into subfolders."""
         return shard(checksum, self.prefix_depth, self.prefix_width)
 
-    def unshard(self, path: str):
-        """Unshard path to determine hash value."""
+    def unshard(self, path: anyio.Path) -> str:
+        """Unshard path to determine checksum."""
         if not self.haspath(path):
             raise ValueError(
-                "Cannot unshard path. The path {0!r} is not "
-                "a subdirectory of the root directory {1!r}".format(path, self.root)
+                f"Cannot unshard path. The path {path} is not "
+                f"a subdirectory of the root directory {self.root}"
             )
 
-        return os.path.splitext(self.relpath(path))[0].replace(os.sep, "")
+        return "".join(path.parts)
 
-    async def repair(self):
+    async def repair(self) -> list[tuple[str, HashAddress]]:
         """Repair any file locations whose content address doesn't match it's
         file path.
         """
@@ -380,12 +380,12 @@ class EverCas(object):
 
         return repaired
 
-    async def corrupted(self):
+    async def corrupted(self) -> AsyncGenerator[tuple[anyio.Path, HashAddress], None]:
         """Return generator that yields corrupted files as ``(path, address)``
         where ``path`` is the path of the corrupted file and ``address`` is
         the :class:`HashAddress` of the expected location.
         """
-        for path in self.files():
+        async for path in self.files():
             checksum = await self.compute_checksum(path)
 
             expected_path = self.checksum_path(checksum)
@@ -393,45 +393,31 @@ class EverCas(object):
             if expected_path != path:
                 yield (
                     path,
-                    HashAddress(checksum, self.relpath(expected_path)),
+                    HashAddress(checksum, str(self.relpath(expected_path))),
                 )
 
-    def __contains__(self, file: str):
+    def __contains__(self, file: str) -> bool:
         """Return whether a given file checksum or path is contained in the
         :attr:`root` directory.
         """
         return self.exists(file)
 
-    def __iter__(self):
+    def __aiter__(self) -> AsyncGenerator[anyio.Path, None]:
         """Iterate over all files in the :attr:`root` directory."""
         return self.files()
 
-    def __len__(self):
-        """Return count of the number of files in the :attr:`root` directory."""
-        return self.count()
 
-
-def find_files(path: str, recursive: bool = False):
+async def find_files(path: anyio.Path, recursive: bool = False):
     if recursive:
-        for folder, _, files in os.walk(path):
-            for file in files:
-                yield os.path.join(folder, file)
+        async for sub_path in path.glob("**"):
+            if sub_path.is_file():
+                yield sub_path
     else:
-        for file in list_dir_files(path):
-            yield file
+        async for sub_path in path.iterdir():
+            if sub_path.is_file():
+                yield sub_path
 
 
-def list_dir_files(path: str):
-    it = os.scandir(path)
-    try:
-        for file in it:
-            if file.is_file():
-                yield file.path
-    finally:
-        try:
-            it.close()
-        except AttributeError:
-            pass
 
 
 def to_bytes(text: bytes | str):
@@ -467,7 +453,7 @@ class PutStrategies:
     @classmethod
     def get(
         cls, method: str | None
-    ) -> Callable[[EverCas, anyio.Path, str], None] | None:
+    ) -> Callable[[EverCas, anyio.Path, anyio.Path], None] | None:
         """Look up a strategy by name string. You can also pass a function
         which will be returned as is."""
         if method:
@@ -479,14 +465,18 @@ class PutStrategies:
                 return getattr(cls, method)
 
     @staticmethod
-    async def copy(evercas: EverCas, src_path: anyio.Path, dest_path: str) -> None:
+    async def copy(
+        evercas: EverCas, src_path: anyio.Path, dest_path: anyio.Path
+    ) -> None:
         """The default copy put strategy, writes the file object to a
         temporary file on disk and then moves it into place."""
         tmp_path = await evercas.mktempfile(src_path)
         shutil.move(tmp_path, dest_path)
 
     @classmethod
-    async def link(cls, evercas: EverCas, src_path: anyio.Path, dest_path: str) -> None:
+    async def link(
+        cls, evercas: EverCas, src_path: anyio.Path, dest_path: anyio.Path
+    ) -> None:
         """Use os.link if available to create a hard link to the original
         file if the EverCas and the original file reside on the same
         filesystem and the filesystem supports hard links."""
