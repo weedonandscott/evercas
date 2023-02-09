@@ -11,6 +11,9 @@
 
 ## v0.8.1
 
+- Merge @x11x changes
+    - Put strategies
+    - Recursive directory put
 - Drop Python 2.x support, Python 3.10+ required
 - Adopt PDM
 - Switch from Sphinx and RST to MkDocs and Markdown
