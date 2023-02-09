@@ -80,6 +80,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#evercas.evercas.EverCas.makepath">makepath()</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#evercas.evercas.EverCas.mktempfile">mktempfile()</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#evercas.evercas.EverCas.open">open()</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#evercas.evercas.EverCas.put">put()</a>
@@ -280,10 +282,7 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 
         <details class="quote">
           <summary>Source code in <code>evercas/evercas.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 17</span>
-<span class="normal"> 18</span>
-<span class="normal"> 19</span>
-<span class="normal"> 20</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 20</span>
 <span class="normal"> 21</span>
 <span class="normal"> 22</span>
 <span class="normal"> 23</span>
@@ -664,7 +663,25 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 <span class="normal">398</span>
 <span class="normal">399</span>
 <span class="normal">400</span>
-<span class="normal">401</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">EverCas</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">EverCas</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Content addressable file manager.</span>
 
 <span class="sd">    Attributes:</span>
@@ -691,14 +708,14 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">root</span><span class="p">,</span>
-        <span class="n">depth</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-        <span class="n">width</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;sha256&quot;</span><span class="p">,</span>
-        <span class="n">fmode</span><span class="o">=</span><span class="mo">0o664</span><span class="p">,</span>
-        <span class="n">dmode</span><span class="o">=</span><span class="mo">0o755</span><span class="p">,</span>
-        <span class="n">put_strategy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">lowercase_extensions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="n">width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">algorithm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sha256&quot;</span><span class="p">,</span>
+        <span class="n">fmode</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mo">0o664</span><span class="p">,</span>
+        <span class="n">dmode</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mo">0o755</span><span class="p">,</span>
+        <span class="n">put_strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">lowercase_extensions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">depth</span> <span class="o">=</span> <span class="n">depth</span>
@@ -709,7 +726,13 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
         <span class="bp">self</span><span class="o">.</span><span class="n">put_strategy</span> <span class="o">=</span> <span class="n">PutStrategies</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">put_strategy</span><span class="p">)</span> <span class="ow">or</span> <span class="n">PutStrategies</span><span class="o">.</span><span class="n">copy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lowercase_extensions</span> <span class="o">=</span> <span class="n">lowercase_extensions</span>
 
-    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">extension</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">put_strategy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">simulate</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">file</span><span class="p">:</span> <span class="n">BinaryIO</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">extension</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">put_strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">simulate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Store contents of `file` on disk using its content hash for the</span>
 <span class="sd">        address.</span>
 
@@ -734,7 +757,7 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 <span class="sd">        There are currently two built-in put strategies: &quot;copy&quot; (the default)</span>
 <span class="sd">        and &quot;link&quot;. &quot;link&quot; attempts to hard link the file into the EverCas if</span>
 <span class="sd">        the platform and underlying filesystem support it, and falls back to</span>
-<span class="sd">        &quot;copy&quot; behaviour.</span>
+<span class="sd">        &quot;copy&quot; behavior.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            HashAddress: File&#39;s hash address.</span>
@@ -753,18 +776,25 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
                 <span class="n">is_duplicate</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">simulate</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">makepath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
-                    <span class="n">put_strategy</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">put_strategy_callable</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="n">PutStrategies</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">put_strategy</span><span class="p">)</span>
                         <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">put_strategy</span>
                         <span class="ow">or</span> <span class="n">PutStrategies</span><span class="o">.</span><span class="n">copy</span>
                     <span class="p">)</span>
-                    <span class="n">put_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span>
+                    <span class="n">put_strategy_callable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">is_duplicate</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">return</span> <span class="n">HashAddress</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">),</span> <span class="n">filepath</span><span class="p">,</span> <span class="n">is_duplicate</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">putdir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">putdir</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">extensions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">put_strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">simulate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Put all files from a directory.</span>
 
 <span class="sd">        Args:</span>
@@ -781,22 +811,23 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">find_files</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="n">recursive</span><span class="p">):</span>
             <span class="n">extension</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">file</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">extensions</span> <span class="k">else</span> <span class="kc">None</span>
-            <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">extension</span><span class="o">=</span><span class="n">extension</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
+                <span class="n">file</span><span class="p">,</span> <span class="n">extension</span><span class="o">=</span><span class="n">extension</span><span class="p">,</span> <span class="n">put_strategy</span><span class="o">=</span><span class="n">put_strategy</span><span class="p">,</span> <span class="n">simulate</span><span class="o">=</span><span class="n">simulate</span>
+            <span class="p">)</span>
             <span class="k">yield</span> <span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_mktempfile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">mktempfile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">:</span> <span class="n">Stream</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a named temporary file from a :class:`Stream` object and</span>
 <span class="sd">        return its filename.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tmp</span> <span class="o">=</span> <span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">oldmask</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">umask</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">oldmask</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">umask</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">tmp</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmode</span><span class="p">)</span>
-            <span class="k">finally</span><span class="p">:</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">umask</span><span class="p">(</span><span class="n">oldmask</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">tmp</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmode</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">umask</span><span class="p">(</span><span class="n">oldmask</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
             <span class="n">tmp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">to_bytes</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
@@ -805,8 +836,8 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 
         <span class="k">return</span> <span class="n">tmp</span><span class="o">.</span><span class="n">name</span>
 
-    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return :class:`HashAdress` from given id or path. If `file` does not</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return :class:`HashAddress` from given id or path. If `file` does not</span>
 <span class="sd">        refer to a valid file, then ``None`` is returned.</span>
 
 <span class="sd">        Args:</span>
@@ -822,7 +853,7 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">HashAddress</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unshard</span><span class="p">(</span><span class="n">realpath</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">realpath</span><span class="p">),</span> <span class="n">realpath</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;rb&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return open buffer object from given id or path.</span>
 
 <span class="sd">        Args:</span>
@@ -841,7 +872,7 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 
         <span class="k">return</span> <span class="n">io</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">realpath</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete file using id or path. Remove any empty directories after</span>
 <span class="sd">        deleting. No exception is raised if file doesn&#39;t exist.</span>
 
@@ -859,7 +890,7 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">remove_empty</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">realpath</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">remove_empty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subpath</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">remove_empty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Successively remove all empty folders starting with `subpath` and</span>
 <span class="sd">        proceeding &quot;up&quot; through directory tree until reaching the :attr:`root`</span>
 <span class="sd">        folder.</span>
@@ -886,7 +917,7 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return generator that yields all folders in the :attr:`root`</span>
 <span class="sd">        directory that contain files.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">folder</span><span class="p">,</span> <span class="n">subfolders</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">folder</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">files</span><span class="p">:</span>
                 <span class="k">yield</span> <span class="n">folder</span>
 
@@ -908,34 +939,35 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 
         <span class="k">return</span> <span class="n">total</span>
 
-    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check whether a given file id or path exists on disk.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">file</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">haspath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">haspath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return whether `path` is a subdirectory of the :attr:`root`</span>
 <span class="sd">        directory.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">issubdir</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">makepath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">makepath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Physically create the folder path on disk.&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmode</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">FileExistsError</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="s2">&quot;expected </span><span class="si">{}</span><span class="s2"> to be a directory&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">relpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">relpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return `path` relative to the :attr:`root` directory.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">realpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">realpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Attempt to determine the real path of a file id or path through</span>
 <span class="sd">        successive checking of candidate paths. If the real path is stored with</span>
 <span class="sd">        an extension, the path is considered a match if the basename matches</span>
 <span class="sd">        the expected file path of the id.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Check for absoluate path.</span>
+
+        <span class="c1"># Check for absolute path.</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">file</span>
 
@@ -957,7 +989,7 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
         <span class="c1"># Could not determine a match.</span>
         <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">idpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">extension</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">idpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">extension</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the file path for a given hash id. Optionally, append a</span>
 <span class="sd">        file extension.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -970,18 +1002,18 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="o">*</span><span class="n">paths</span><span class="p">)</span> <span class="o">+</span> <span class="n">extension</span>
 
-    <span class="k">def</span> <span class="nf">computehash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">computehash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">:</span> <span class="n">Stream</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute hash of file using :attr:`algorithm`.&quot;&quot;&quot;</span>
         <span class="n">hashobj</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">algorithm</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
             <span class="n">hashobj</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">to_bytes</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">hashobj</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">shard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">shard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Shard content ID into subfolders.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">shard</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">unshard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">unshard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Unshard path to determine hash value.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">haspath</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -991,11 +1023,11 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">path</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">repair</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">repair</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">extensions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Repair any file locations whose content address doesn&#39;t match it&#39;s</span>
 <span class="sd">        file path.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">repaired</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">repaired</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">HashAddress</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">corrupted</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corrupted</span><span class="p">(</span><span class="n">extensions</span><span class="o">=</span><span class="n">extensions</span><span class="p">))</span>
         <span class="n">oldmask</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">umask</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
@@ -1016,7 +1048,7 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 
         <span class="k">return</span> <span class="n">repaired</span>
 
-    <span class="k">def</span> <span class="nf">corrupted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">corrupted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">extensions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return generator that yields corrupted files as ``(path, address)``</span>
 <span class="sd">        where ``path`` is the path of the corrupted file and ``address`` is</span>
 <span class="sd">        the :class:`HashAddress` of the expected location.</span>
@@ -1036,7 +1068,7 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
                     <span class="n">HashAddress</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">expected_path</span><span class="p">),</span> <span class="n">expected_path</span><span class="p">),</span>
                 <span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return whether a given file id or path is contained in the</span>
 <span class="sd">        :attr:`root` directory.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1081,11 +1113,11 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">389</span>
-<span class="normal">390</span>
-<span class="normal">391</span>
-<span class="normal">392</span>
-<span class="normal">393</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return whether a given file id or path is contained in the</span>
 <span class="sd">    :attr:`root` directory.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1112,9 +1144,9 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">395</span>
-<span class="normal">396</span>
-<span class="normal">397</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Iterate over all files in the :attr:`root` directory.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
@@ -1139,9 +1171,9 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">399</span>
-<span class="normal">400</span>
-<span class="normal">401</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return count of the number of files in the :attr:`root` directory.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
@@ -1166,12 +1198,12 @@ to lower case when adding files. Defaults to <code>False</code>.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">323</span>
-<span class="normal">324</span>
-<span class="normal">325</span>
-<span class="normal">326</span>
-<span class="normal">327</span>
-<span class="normal">328</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computehash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computehash</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">:</span> <span class="n">Stream</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute hash of file using :attr:`algorithm`.&quot;&quot;&quot;</span>
     <span class="n">hashobj</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">algorithm</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
@@ -1201,25 +1233,25 @@ the :class:<code>HashAddress</code> of the expected location.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">369</span>
-<span class="normal">370</span>
-<span class="normal">371</span>
-<span class="normal">372</span>
-<span class="normal">373</span>
-<span class="normal">374</span>
-<span class="normal">375</span>
-<span class="normal">376</span>
-<span class="normal">377</span>
-<span class="normal">378</span>
-<span class="normal">379</span>
-<span class="normal">380</span>
-<span class="normal">381</span>
-<span class="normal">382</span>
-<span class="normal">383</span>
-<span class="normal">384</span>
-<span class="normal">385</span>
-<span class="normal">386</span>
-<span class="normal">387</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">corrupted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">corrupted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">extensions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return generator that yields corrupted files as ``(path, address)``</span>
 <span class="sd">    where ``path`` is the path of the corrupted file and ``address`` is</span>
 <span class="sd">    the :class:`HashAddress` of the expected location.</span>
@@ -1260,12 +1292,12 @@ the :class:<code>HashAddress</code> of the expected location.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">243</span>
-<span class="normal">244</span>
-<span class="normal">245</span>
-<span class="normal">246</span>
-<span class="normal">247</span>
-<span class="normal">248</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return count of the number of files in the :attr:`root` directory.&quot;&quot;&quot;</span>
     <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
@@ -1318,23 +1350,23 @@ deleting. No exception is raised if file doesn't exist.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span>
-<span class="normal">198</span>
-<span class="normal">199</span>
-<span class="normal">200</span>
-<span class="normal">201</span>
-<span class="normal">202</span>
-<span class="normal">203</span>
-<span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
-<span class="normal">207</span>
-<span class="normal">208</span>
-<span class="normal">209</span>
-<span class="normal">210</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Delete file using id or path. Remove any empty directories after</span>
 <span class="sd">    deleting. No exception is raised if file doesn&#39;t exist.</span>
 
@@ -1373,9 +1405,9 @@ deleting. No exception is raised if file doesn't exist.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">261</span>
-<span class="normal">262</span>
-<span class="normal">263</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check whether a given file id or path exists on disk.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">file</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
@@ -1401,12 +1433,12 @@ directory.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">228</span>
-<span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span>
-<span class="normal">232</span>
-<span class="normal">233</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">files</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">files</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return generator that yields all files in the :attr:`root`</span>
 <span class="sd">    directory.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1435,17 +1467,17 @@ directory that contain files.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">235</span>
-<span class="normal">236</span>
-<span class="normal">237</span>
-<span class="normal">238</span>
-<span class="normal">239</span>
-<span class="normal">240</span>
-<span class="normal">241</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">folders</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">folders</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return generator that yields all folders in the :attr:`root`</span>
 <span class="sd">    directory that contain files.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">for</span> <span class="n">folder</span><span class="p">,</span> <span class="n">subfolders</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">folder</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">files</span><span class="p">:</span>
             <span class="k">yield</span> <span class="n">folder</span>
 </code></pre></div></td></tr></table></div>
@@ -1466,7 +1498,7 @@ directory that contain files.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Return :class:<code>HashAdress</code> from given id or path. If <code>file</code> does not
+      <p>Return :class:<code>HashAddress</code> from given id or path. If <code>file</code> does not
 refer to a valid file, then <code>None</code> is returned.</p>
 
   <p><strong>Parameters:</strong></p>
@@ -1512,23 +1544,23 @@ refer to a valid file, then <code>None</code> is returned.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return :class:`HashAdress` from given id or path. If `file` does not</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return :class:`HashAddress` from given id or path. If `file` does not</span>
 <span class="sd">    refer to a valid file, then ``None`` is returned.</span>
 
 <span class="sd">    Args:</span>
@@ -1566,11 +1598,11 @@ directory.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">265</span>
-<span class="normal">266</span>
-<span class="normal">267</span>
-<span class="normal">268</span>
-<span class="normal">269</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">haspath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">haspath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return whether `path` is a subdirectory of the :attr:`root`</span>
 <span class="sd">    directory.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1598,18 +1630,18 @@ file extension.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">310</span>
-<span class="normal">311</span>
-<span class="normal">312</span>
-<span class="normal">313</span>
-<span class="normal">314</span>
-<span class="normal">315</span>
-<span class="normal">316</span>
-<span class="normal">317</span>
-<span class="normal">318</span>
-<span class="normal">319</span>
-<span class="normal">320</span>
-<span class="normal">321</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">idpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">extension</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">idpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">extension</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the file path for a given hash id. Optionally, append a</span>
 <span class="sd">    file extension.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1643,17 +1675,77 @@ file extension.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">271</span>
-<span class="normal">272</span>
-<span class="normal">273</span>
-<span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">makepath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">makepath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Physically create the folder path on disk.&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmode</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">FileExistsError</span><span class="p">:</span>
         <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="s2">&quot;expected </span><span class="si">{}</span><span class="s2"> to be a directory&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="evercas.evercas.EverCas.mktempfile" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">mktempfile</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Create a named temporary file from a :class:<code>Stream</code> object and
+return its filename.</p>
+
+      <details class="quote">
+        <summary>Source code in <code>evercas/evercas.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">mktempfile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">:</span> <span class="n">Stream</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a named temporary file from a :class:`Stream` object and</span>
+<span class="sd">    return its filename.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">oldmask</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">umask</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">tmp</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmode</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">umask</span><span class="p">(</span><span class="n">oldmask</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
+        <span class="n">tmp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">to_bytes</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+    <span class="n">tmp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">tmp</span><span class="o">.</span><span class="n">name</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -1745,24 +1837,24 @@ file extension.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;rb&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return open buffer object from given id or path.</span>
 
 <span class="sd">    Args:</span>
@@ -1868,7 +1960,7 @@ create the path <code>filepath</code> containing the data in <code>stream</code>
 <p>There are currently two built-in put strategies: "copy" (the default)
 and "link". "link" attempts to hard link the file into the EverCas if
 the platform and underlying filesystem support it, and falls back to
-"copy" behaviour.</p>
+"copy" behavior.</p>
 
   <p><strong>Returns:</strong></p>
   <table>
@@ -1889,10 +1981,7 @@ the platform and underlying filesystem support it, and falls back to
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 62</span>
-<span class="normal"> 63</span>
-<span class="normal"> 64</span>
-<span class="normal"> 65</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 65</span>
 <span class="normal"> 66</span>
 <span class="normal"> 67</span>
 <span class="normal"> 68</span>
@@ -1942,7 +2031,22 @@ the platform and underlying filesystem support it, and falls back to
 <span class="normal">112</span>
 <span class="normal">113</span>
 <span class="normal">114</span>
-<span class="normal">115</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">extension</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">put_strategy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">simulate</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">put</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">file</span><span class="p">:</span> <span class="n">BinaryIO</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">extension</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">put_strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">simulate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Store contents of `file` on disk using its content hash for the</span>
 <span class="sd">    address.</span>
 
@@ -1967,7 +2071,7 @@ the platform and underlying filesystem support it, and falls back to
 <span class="sd">    There are currently two built-in put strategies: &quot;copy&quot; (the default)</span>
 <span class="sd">    and &quot;link&quot;. &quot;link&quot; attempts to hard link the file into the EverCas if</span>
 <span class="sd">    the platform and underlying filesystem support it, and falls back to</span>
-<span class="sd">    &quot;copy&quot; behaviour.</span>
+<span class="sd">    &quot;copy&quot; behavior.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        HashAddress: File&#39;s hash address.</span>
@@ -1986,12 +2090,12 @@ the platform and underlying filesystem support it, and falls back to
             <span class="n">is_duplicate</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">simulate</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">makepath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
-                <span class="n">put_strategy</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">put_strategy_callable</span> <span class="o">=</span> <span class="p">(</span>
                     <span class="n">PutStrategies</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">put_strategy</span><span class="p">)</span>
                     <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">put_strategy</span>
                     <span class="ow">or</span> <span class="n">PutStrategies</span><span class="o">.</span><span class="n">copy</span>
                 <span class="p">)</span>
-                <span class="n">put_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span>
+                <span class="n">put_strategy_callable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">is_duplicate</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -2007,7 +2111,7 @@ the platform and underlying filesystem support it, and falls back to
 
 
 <h3 id="evercas.evercas.EverCas.putdir" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">putdir</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">putdir</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">put_strategy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">simulate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h3>
 
@@ -2067,7 +2171,7 @@ Defaults to <code>False</code>.</p></td>
           </td>
           <td><p>same as :meth:<code>put</code>.</p></td>
           <td>
-              <em>required</em>
+                <code>None</code>
           </td>
         </tr>
         <tr>
@@ -2077,7 +2181,7 @@ Defaults to <code>False</code>.</p></td>
           </td>
           <td><p>same as :meth:<code>put</code>.</p></td>
           <td>
-              <em>required</em>
+                <code>False</code>
           </td>
         </tr>
     </tbody>
@@ -2086,16 +2190,7 @@ Defaults to <code>False</code>.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">126</span>
 <span class="normal">127</span>
 <span class="normal">128</span>
 <span class="normal">129</span>
@@ -2104,7 +2199,32 @@ Defaults to <code>False</code>.</p></td>
 <span class="normal">132</span>
 <span class="normal">133</span>
 <span class="normal">134</span>
-<span class="normal">135</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">putdir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">putdir</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">extensions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">put_strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">simulate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Put all files from a directory.</span>
 
 <span class="sd">    Args:</span>
@@ -2121,7 +2241,9 @@ Defaults to <code>False</code>.</p></td>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">find_files</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="n">recursive</span><span class="p">):</span>
         <span class="n">extension</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">file</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">extensions</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">extension</span><span class="o">=</span><span class="n">extension</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
+            <span class="n">file</span><span class="p">,</span> <span class="n">extension</span><span class="o">=</span><span class="n">extension</span><span class="p">,</span> <span class="n">put_strategy</span><span class="o">=</span><span class="n">put_strategy</span><span class="p">,</span> <span class="n">simulate</span><span class="o">=</span><span class="n">simulate</span>
+        <span class="p">)</span>
         <span class="k">yield</span> <span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
       </details>
@@ -2148,24 +2270,7 @@ the expected file path of the id.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span>
-<span class="normal">285</span>
-<span class="normal">286</span>
-<span class="normal">287</span>
-<span class="normal">288</span>
-<span class="normal">289</span>
-<span class="normal">290</span>
-<span class="normal">291</span>
-<span class="normal">292</span>
-<span class="normal">293</span>
-<span class="normal">294</span>
-<span class="normal">295</span>
-<span class="normal">296</span>
-<span class="normal">297</span>
-<span class="normal">298</span>
-<span class="normal">299</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">299</span>
 <span class="normal">300</span>
 <span class="normal">301</span>
 <span class="normal">302</span>
@@ -2174,13 +2279,32 @@ the expected file path of the id.</p>
 <span class="normal">305</span>
 <span class="normal">306</span>
 <span class="normal">307</span>
-<span class="normal">308</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">realpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">realpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Attempt to determine the real path of a file id or path through</span>
 <span class="sd">    successive checking of candidate paths. If the real path is stored with</span>
 <span class="sd">    an extension, the path is considered a match if the basename matches</span>
 <span class="sd">    the expected file path of the id.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Check for absoluate path.</span>
+
+    <span class="c1"># Check for absolute path.</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">file</span>
 
@@ -2223,9 +2347,9 @@ the expected file path of the id.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">278</span>
-<span class="normal">279</span>
-<span class="normal">280</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">relpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">relpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return `path` relative to the :attr:`root` directory.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -2252,21 +2376,21 @@ folder.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span>
-<span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span>
-<span class="normal">223</span>
-<span class="normal">224</span>
-<span class="normal">225</span>
-<span class="normal">226</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">remove_empty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subpath</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">remove_empty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Successively remove all empty folders starting with `subpath` and</span>
 <span class="sd">    proceeding &quot;up&quot; through directory tree until reaching the :attr:`root`</span>
 <span class="sd">    folder.</span>
@@ -2304,34 +2428,34 @@ file path.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">344</span>
-<span class="normal">345</span>
-<span class="normal">346</span>
-<span class="normal">347</span>
-<span class="normal">348</span>
-<span class="normal">349</span>
-<span class="normal">350</span>
-<span class="normal">351</span>
-<span class="normal">352</span>
-<span class="normal">353</span>
-<span class="normal">354</span>
-<span class="normal">355</span>
-<span class="normal">356</span>
-<span class="normal">357</span>
-<span class="normal">358</span>
-<span class="normal">359</span>
-<span class="normal">360</span>
-<span class="normal">361</span>
-<span class="normal">362</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">362</span>
 <span class="normal">363</span>
 <span class="normal">364</span>
 <span class="normal">365</span>
 <span class="normal">366</span>
-<span class="normal">367</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">repair</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">repair</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">extensions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Repair any file locations whose content address doesn&#39;t match it&#39;s</span>
 <span class="sd">    file path.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">repaired</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">repaired</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">HashAddress</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">corrupted</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corrupted</span><span class="p">(</span><span class="n">extensions</span><span class="o">=</span><span class="n">extensions</span><span class="p">))</span>
     <span class="n">oldmask</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">umask</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
@@ -2373,9 +2497,9 @@ file path.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">330</span>
-<span class="normal">331</span>
-<span class="normal">332</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">shard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">shard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Shard content ID into subfolders.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">shard</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -2401,16 +2525,16 @@ directory.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">250</span>
-<span class="normal">251</span>
-<span class="normal">252</span>
-<span class="normal">253</span>
-<span class="normal">254</span>
-<span class="normal">255</span>
-<span class="normal">256</span>
-<span class="normal">257</span>
-<span class="normal">258</span>
-<span class="normal">259</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the total size in bytes of all files in the :attr:`root`</span>
 <span class="sd">    directory.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -2442,15 +2566,15 @@ directory.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">334</span>
-<span class="normal">335</span>
-<span class="normal">336</span>
-<span class="normal">337</span>
-<span class="normal">338</span>
-<span class="normal">339</span>
-<span class="normal">340</span>
-<span class="normal">341</span>
-<span class="normal">342</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">unshard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">unshard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unshard path to determine hash value.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">haspath</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -2480,13 +2604,15 @@ directory.</p>
 <h2 id="evercas.evercas.HashAddress" class="doc doc-heading">
         <code>HashAddress</code>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
 
 </h2>
 
 
   <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="collections.namedtuple">namedtuple</span>(<a class="autorefs autorefs-internal" title="evercas.evercas.HashAddress" href="#evercas.evercas.HashAddress">HashAddress</a>, [id, relpath, abspath, is_duplicate])</code></p>
 
   
       <p>File address containing file's path on disk and it's content hash ID.</p>
@@ -2520,7 +2646,7 @@ directory.</p>
           <td>
                 <code>str</code>
           </td>
-          <td><p>Absoluate path location of file on disk.</p></td>
+          <td><p>Absolute path location of file on disk.</p></td>
         </tr>
         <tr>
           <td><code>is_duplicate</code></td>
@@ -2537,37 +2663,39 @@ after a put operation. Defaults to <code>False</code>.</p></td>
 
         <details class="quote">
           <summary>Source code in <code>evercas/evercas.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">433</span>
-<span class="normal">434</span>
-<span class="normal">435</span>
-<span class="normal">436</span>
-<span class="normal">437</span>
-<span class="normal">438</span>
-<span class="normal">439</span>
-<span class="normal">440</span>
-<span class="normal">441</span>
-<span class="normal">442</span>
-<span class="normal">443</span>
-<span class="normal">444</span>
-<span class="normal">445</span>
-<span class="normal">446</span>
-<span class="normal">447</span>
-<span class="normal">448</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">HashAddress</span><span class="p">(</span>
-    <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;HashAddress&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;relpath&quot;</span><span class="p">,</span> <span class="s2">&quot;abspath&quot;</span><span class="p">,</span> <span class="s2">&quot;is_duplicate&quot;</span><span class="p">])</span>
-<span class="p">):</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">HashAddress</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;File address containing file&#39;s path on disk and it&#39;s content hash ID.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        id (str): Hash ID (hexdigest) of file contents.</span>
 <span class="sd">        relpath (str): Relative path location to :attr:`EverCas.root`.</span>
-<span class="sd">        abspath (str): Absoluate path location of file on disk.</span>
+<span class="sd">        abspath (str): Absolute path location of file on disk.</span>
 <span class="sd">        is_duplicate (boolean, optional): Whether the hash address created was</span>
 <span class="sd">            a duplicate of a previously existing file. Can only be ``True``</span>
 <span class="sd">            after a put operation. Defaults to ``False``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">relpath</span><span class="p">,</span> <span class="n">abspath</span><span class="p">,</span> <span class="n">is_duplicate</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">HashAddress</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">relpath</span><span class="p">,</span> <span class="n">abspath</span><span class="p">,</span> <span class="n">is_duplicate</span><span class="p">)</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">relpath</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">abspath</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">is_duplicate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 </code></pre></div></td></tr></table></div>
         </details>
 
@@ -2612,26 +2740,7 @@ strategy by name, or directly reference one of the included class methods.</p>
 
         <details class="quote">
           <summary>Source code in <code>evercas/evercas.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">522</span>
-<span class="normal">523</span>
-<span class="normal">524</span>
-<span class="normal">525</span>
-<span class="normal">526</span>
-<span class="normal">527</span>
-<span class="normal">528</span>
-<span class="normal">529</span>
-<span class="normal">530</span>
-<span class="normal">531</span>
-<span class="normal">532</span>
-<span class="normal">533</span>
-<span class="normal">534</span>
-<span class="normal">535</span>
-<span class="normal">536</span>
-<span class="normal">537</span>
-<span class="normal">538</span>
-<span class="normal">539</span>
-<span class="normal">540</span>
-<span class="normal">541</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">541</span>
 <span class="normal">542</span>
 <span class="normal">543</span>
 <span class="normal">544</span>
@@ -2670,7 +2779,26 @@ strategy by name, or directly reference one of the included class methods.</p>
 <span class="normal">577</span>
 <span class="normal">578</span>
 <span class="normal">579</span>
-<span class="normal">580</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PutStrategies</span><span class="p">:</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PutStrategies</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Namespace for built-in put strategies.</span>
 
 <span class="sd">    Should not be instantiated. Use the :meth:`get` static method to look up a</span>
@@ -2678,57 +2806,57 @@ strategy by name, or directly reference one of the included class methods.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Look up a stragegy by name string. You can also pass a function</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">EverCas</span><span class="p">,</span> <span class="n">Stream</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Look up a strategy by name string. You can also pass a function</span>
 <span class="sd">        which will be returned as is.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">method</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;get&quot;</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;invalid put strategy name, &#39;get&#39;&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">method</span> <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">method</span><span class="p">)</span> <span class="k">else</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">method</span>
+            <span class="k">elif</span> <span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="n">evercas</span><span class="p">,</span> <span class="n">src_stream</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="n">evercas</span><span class="p">:</span> <span class="n">EverCas</span><span class="p">,</span> <span class="n">src_stream</span><span class="p">:</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The default copy put strategy, writes the file object to a</span>
 <span class="sd">        temporary file on disk and then moves it into place.&quot;&quot;&quot;</span>
-        <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">evercas</span><span class="o">.</span><span class="n">_mktempfile</span><span class="p">(</span><span class="n">src_stream</span><span class="p">),</span> <span class="n">dst_path</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">evercas</span><span class="o">.</span><span class="n">mktempfile</span><span class="p">(</span><span class="n">src_stream</span><span class="p">),</span> <span class="n">dst_path</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">os</span><span class="p">,</span> <span class="s2">&quot;link&quot;</span><span class="p">):</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">link</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">evercas</span><span class="p">:</span> <span class="n">EverCas</span><span class="p">,</span> <span class="n">src_stream</span><span class="p">:</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Use os.link if available to create a hard link to the original</span>
+<span class="sd">        file if the EverCas and the original file reside on the same</span>
+<span class="sd">        filesystem and the filesystem supports hard links.&quot;&quot;&quot;</span>
 
-        <span class="nd">@classmethod</span>
-        <span class="k">def</span> <span class="nf">link</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">evercas</span><span class="p">,</span> <span class="n">src_stream</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Use os.link if available to create a hard link to the original</span>
-<span class="sd">            file if the EverCas and the original file reside on the same</span>
-<span class="sd">            filesystem and the filesystem supports hard links.&quot;&quot;&quot;</span>
-            <span class="c1"># Get the original file path exposed by the Stream instance</span>
-            <span class="n">src_path</span> <span class="o">=</span> <span class="n">src_stream</span><span class="o">.</span><span class="n">name</span>
-            <span class="c1"># No path available because e.g. a StringIO was used</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">src_path</span><span class="p">:</span>
-                <span class="c1"># Just copy</span>
-                <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">evercas</span><span class="p">,</span> <span class="n">src_stream</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">os</span><span class="p">,</span> <span class="s2">&quot;link&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">PutStrategies</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">evercas</span><span class="p">,</span> <span class="n">src_stream</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">)</span>
 
-            <span class="k">try</span><span class="p">:</span>
-                <span class="c1"># Try to create the hard link</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="n">src_path</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">EnvironmentError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="c1"># These are link specific errors. If any of these 3 are raised</span>
-                <span class="c1"># we try to copy instead</span>
-                <span class="c1"># EMLINK - src already has the maximum number of links to it</span>
-                <span class="c1"># EXDEV - invalid cross-device link</span>
-                <span class="c1"># EPERM - the dst filesystem does not support hard links</span>
-                <span class="c1"># (note EPERM could also be another permissions error; these</span>
-                <span class="c1"># will be raised again when we try to copy)</span>
-                <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">EMLINK</span><span class="p">,</span> <span class="n">errno</span><span class="o">.</span><span class="n">EXDEV</span><span class="p">,</span> <span class="n">errno</span><span class="o">.</span><span class="n">EPERM</span><span class="p">):</span>
-                    <span class="k">raise</span>
-                <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">evercas</span><span class="p">,</span> <span class="n">src_stream</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># After creating the hard link, make sure it has the correct</span>
-                <span class="c1"># file permissions</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">dst_path</span><span class="p">,</span> <span class="n">evercas</span><span class="o">.</span><span class="n">fmode</span><span class="p">)</span>
+        <span class="c1"># Get the original file path exposed by the Stream instance</span>
+        <span class="n">src_path</span> <span class="o">=</span> <span class="n">src_stream</span><span class="o">.</span><span class="n">name</span>
+        <span class="c1"># No path available because e.g. a StringIO was used</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">src_path</span><span class="p">:</span>
+            <span class="c1"># Just copy</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">evercas</span><span class="p">,</span> <span class="n">src_stream</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">)</span>
 
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># Platform does not support os.link, so use the default copy strategy</span>
-        <span class="c1"># instead</span>
-        <span class="n">link</span> <span class="o">=</span> <span class="n">copy</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Try to create the hard link</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="n">src_path</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">EnvironmentError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># These are link specific errors. If any of these 3 are raised</span>
+            <span class="c1"># we try to copy instead</span>
+            <span class="c1"># EMLINK - src already has the maximum number of links to it</span>
+            <span class="c1"># EXDEV - invalid cross-device link</span>
+            <span class="c1"># EPERM - the dst filesystem does not support hard links</span>
+            <span class="c1"># (note EPERM could also be another permissions error; these</span>
+            <span class="c1"># will be raised again when we try to copy)</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">EMLINK</span><span class="p">,</span> <span class="n">errno</span><span class="o">.</span><span class="n">EXDEV</span><span class="p">,</span> <span class="n">errno</span><span class="o">.</span><span class="n">EPERM</span><span class="p">):</span>
+                <span class="k">raise</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">evercas</span><span class="p">,</span> <span class="n">src_stream</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># After creating the hard link, make sure it has the correct</span>
+            <span class="c1"># file permissions</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">dst_path</span><span class="p">,</span> <span class="n">evercas</span><span class="o">.</span><span class="n">fmode</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
         </details>
 
@@ -2765,15 +2893,15 @@ temporary file on disk and then moves it into place.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">538</span>
-<span class="normal">539</span>
-<span class="normal">540</span>
-<span class="normal">541</span>
-<span class="normal">542</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
-<span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="n">evercas</span><span class="p">,</span> <span class="n">src_stream</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="n">evercas</span><span class="p">:</span> <span class="n">EverCas</span><span class="p">,</span> <span class="n">src_stream</span><span class="p">:</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The default copy put strategy, writes the file object to a</span>
 <span class="sd">    temporary file on disk and then moves it into place.&quot;&quot;&quot;</span>
-    <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">evercas</span><span class="o">.</span><span class="n">_mktempfile</span><span class="p">(</span><span class="n">src_stream</span><span class="p">),</span> <span class="n">dst_path</span><span class="p">)</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">evercas</span><span class="o">.</span><span class="n">mktempfile</span><span class="p">(</span><span class="n">src_stream</span><span class="p">),</span> <span class="n">dst_path</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -2796,26 +2924,32 @@ temporary file on disk and then moves it into place.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Look up a stragegy by name string. You can also pass a function
+      <p>Look up a strategy by name string. You can also pass a function
 which will be returned as is.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">529</span>
-<span class="normal">530</span>
-<span class="normal">531</span>
-<span class="normal">532</span>
-<span class="normal">533</span>
-<span class="normal">534</span>
-<span class="normal">535</span>
-<span class="normal">536</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Look up a stragegy by name string. You can also pass a function</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">EverCas</span><span class="p">,</span> <span class="n">Stream</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Look up a strategy by name string. You can also pass a function</span>
 <span class="sd">    which will be returned as is.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">method</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;get&quot;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;invalid put strategy name, &#39;get&#39;&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">method</span> <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">method</span><span class="p">)</span> <span class="k">else</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">method</span>
+        <span class="k">elif</span> <span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -2844,27 +2978,7 @@ filesystem and the filesystem supports hard links.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">546</span>
-<span class="normal">547</span>
-<span class="normal">548</span>
-<span class="normal">549</span>
-<span class="normal">550</span>
-<span class="normal">551</span>
-<span class="normal">552</span>
-<span class="normal">553</span>
-<span class="normal">554</span>
-<span class="normal">555</span>
-<span class="normal">556</span>
-<span class="normal">557</span>
-<span class="normal">558</span>
-<span class="normal">559</span>
-<span class="normal">560</span>
-<span class="normal">561</span>
-<span class="normal">562</span>
-<span class="normal">563</span>
-<span class="normal">564</span>
-<span class="normal">565</span>
-<span class="normal">566</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">566</span>
 <span class="normal">567</span>
 <span class="normal">568</span>
 <span class="normal">569</span>
@@ -2873,11 +2987,39 @@ filesystem and the filesystem supports hard links.</p>
 <span class="normal">572</span>
 <span class="normal">573</span>
 <span class="normal">574</span>
-<span class="normal">575</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">link</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">evercas</span><span class="p">,</span> <span class="n">src_stream</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">):</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span> <span class="nf">link</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">evercas</span><span class="p">:</span> <span class="n">EverCas</span><span class="p">,</span> <span class="n">src_stream</span><span class="p">:</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Use os.link if available to create a hard link to the original</span>
 <span class="sd">    file if the EverCas and the original file reside on the same</span>
 <span class="sd">    filesystem and the filesystem supports hard links.&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">os</span><span class="p">,</span> <span class="s2">&quot;link&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">PutStrategies</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">evercas</span><span class="p">,</span> <span class="n">src_stream</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">)</span>
+
     <span class="c1"># Get the original file path exposed by the Stream instance</span>
     <span class="n">src_path</span> <span class="o">=</span> <span class="n">src_stream</span><span class="o">.</span><span class="n">name</span>
     <span class="c1"># No path available because e.g. a StringIO was used</span>
@@ -2946,26 +3088,7 @@ set it's position back to <code>0</code>.</p>
 
         <details class="quote">
           <summary>Source code in <code>evercas/evercas.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">451</span>
-<span class="normal">452</span>
-<span class="normal">453</span>
-<span class="normal">454</span>
-<span class="normal">455</span>
-<span class="normal">456</span>
-<span class="normal">457</span>
-<span class="normal">458</span>
-<span class="normal">459</span>
-<span class="normal">460</span>
-<span class="normal">461</span>
-<span class="normal">462</span>
-<span class="normal">463</span>
-<span class="normal">464</span>
-<span class="normal">465</span>
-<span class="normal">466</span>
-<span class="normal">467</span>
-<span class="normal">468</span>
-<span class="normal">469</span>
-<span class="normal">470</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">470</span>
 <span class="normal">471</span>
 <span class="normal">472</span>
 <span class="normal">473</span>
@@ -3014,7 +3137,26 @@ set it's position back to <code>0</code>.</p>
 <span class="normal">516</span>
 <span class="normal">517</span>
 <span class="normal">518</span>
-<span class="normal">519</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Stream</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Stream</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Common interface for file-like objects.</span>
 
 <span class="sd">    The input `obj` can be a file-like object or a path to a file. If `obj` is</span>
@@ -3028,14 +3170,14 @@ set it's position back to <code>0</code>.</p>
 <span class="sd">    set it&#39;s position back to ``0``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;read&quot;</span><span class="p">):</span>
-            <span class="n">pos</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">BinaryIO</span> <span class="o">|</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span>
             <span class="n">pos</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">BinaryIO</span><span class="p">):</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Object must be a valid file path or a readable object&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Object must be a valid file path or a BinaryIO object&quot;</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">file_stat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
@@ -3050,7 +3192,7 @@ set it's position back to <code>0</code>.</p>
             <span class="c1"># file-like objects</span>
             <span class="c1"># name property can also hold int fd, so we make it None in that</span>
             <span class="c1"># case</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -3115,22 +3257,22 @@ original position if we didn't open it originally.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">495</span>
-<span class="normal">496</span>
-<span class="normal">497</span>
-<span class="normal">498</span>
-<span class="normal">499</span>
-<span class="normal">500</span>
-<span class="normal">501</span>
-<span class="normal">502</span>
-<span class="normal">503</span>
-<span class="normal">504</span>
-<span class="normal">505</span>
-<span class="normal">506</span>
-<span class="normal">507</span>
-<span class="normal">508</span>
-<span class="normal">509</span>
-<span class="normal">510</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Read underlying IO object and yield results. Return object to</span>
 <span class="sd">    original position if we didn&#39;t open it originally.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3169,14 +3311,14 @@ original position.</p>
 
       <details class="quote">
         <summary>Source code in <code>evercas/evercas.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">512</span>
-<span class="normal">513</span>
-<span class="normal">514</span>
-<span class="normal">515</span>
-<span class="normal">516</span>
-<span class="normal">517</span>
-<span class="normal">518</span>
-<span class="normal">519</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Close underlying IO object if we opened it, else return it to</span>
 <span class="sd">    original position.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
