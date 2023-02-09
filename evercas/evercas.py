@@ -107,7 +107,7 @@ class EverCas(object):
             else:
                 is_duplicate = True
 
-        return HashAddress(checksum, self.relpath(filepath), filepath, is_duplicate)
+        return HashAddress(checksum, self.relpath(filepath), is_duplicate)
 
     def putdir(
         self,
@@ -166,7 +166,7 @@ class EverCas(object):
         if realpath is None:
             return None
         else:
-            return HashAddress(self.unshard(realpath), self.relpath(realpath), realpath)
+            return HashAddress(self.unshard(realpath), self.relpath(realpath))
 
     def open(self, file: str, mode: str = "rb"):
         """Return open buffer object from given checksum or path.
@@ -275,6 +275,10 @@ class EverCas(object):
         """Return `path` relative to the :attr:`root` directory."""
         return os.path.relpath(path, self.root)
 
+    def abspath(self, path: str):
+        """Return absolute version of `path` in :attr:`root` directory."""
+        return os.path.normpath(os.path.join(self.root, path))
+
     # TODO: rewrite
     def realpath(self, file: str):
         """Attempt to determine the real path of a file checksum or path through
@@ -338,17 +342,18 @@ class EverCas(object):
         oldmask = os.umask(0)
 
         try:
-            for path, address in corrupted:
-                if os.path.isfile(address.abspath):
+            for corrupt_path, expected_address in corrupted:
+                expected_abspath = self.abspath(expected_address.path)
+                if os.path.isfile(expected_abspath):
                     # File already exists so just delete corrupted path.
-                    os.remove(path)
+                    os.remove(corrupt_path)
                 else:
                     # File doesn't exists so move it.
-                    self.makepath(os.path.dirname(address.abspath))
-                    shutil.move(path, address.abspath)
+                    self.makepath(os.path.dirname(expected_abspath))
+                    shutil.move(corrupt_path, expected_abspath)
 
-                os.chmod(address.abspath, self.fmode)
-                repaired.append((path, address))
+                os.chmod(expected_abspath, self.fmode)
+                repaired.append((corrupt_path, expected_address))
         finally:
             os.umask(oldmask)
 
@@ -370,7 +375,7 @@ class EverCas(object):
             if expected_path != path:
                 yield (
                     path,
-                    HashAddress(checksum, self.relpath(expected_path), expected_path),
+                    HashAddress(checksum, self.relpath(expected_path)),
                 )
 
     def __contains__(self, file: str):
@@ -423,16 +428,14 @@ class HashAddress:
 
     Attributes:
         checksum (str): Hexdigest of file contents.
-        relpath (str): Relative path location to :attr:`EverCas.root`.
-        abspath (str): Absolute path location of file on disk.
+        path (str): Relative path location to :attr:`EverCas.root`.
         is_duplicate (boolean, optional): Whether the hash address created was
             a duplicate of a previously existing file. Can only be ``True``
             after a put operation. Defaults to ``False``.
     """
 
     checksum: str
-    relpath: str
-    abspath: str
+    path: str
     is_duplicate: bool = False
 
 

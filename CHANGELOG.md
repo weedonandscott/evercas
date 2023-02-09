@@ -3,10 +3,11 @@
 ## Upcoming changes
 
 - Hash exclusively using `blake3`
-- change default 'fmode', 'dmode' values
-- rename 'depth', 'width' to 'prefix_depth', 'prefix_width' and change their defaults
-- remove extension preservation on stored blobs
-- some minor internal refactoring
+- Change default 'fmode', 'dmode' values
+- Rename 'depth', 'width' to 'prefix_depth', 'prefix_width' and change their defaults
+- Remove extension preservation on stored blobs
+- Only store relative path in `HashAddress`
+- Some minor internal refactoring
 
 ## v0.8.1
 
