@@ -90,8 +90,8 @@ class EverCas(object):
         stream = Stream(file)
 
         with closing(stream):
-            id = self.computehash(stream)
-            filepath = self.idpath(id)
+            checksum = self.computehash(stream)
+            filepath = self.checksum_path(checksum)
 
             # Only move file if it doesn't already exist.
             if not os.path.isfile(filepath):
@@ -107,7 +107,7 @@ class EverCas(object):
             else:
                 is_duplicate = True
 
-        return HashAddress(id, self.relpath(filepath), filepath, is_duplicate)
+        return HashAddress(checksum, self.relpath(filepath), filepath, is_duplicate)
 
     def putdir(
         self,
@@ -152,11 +152,11 @@ class EverCas(object):
         return tmp.name
 
     def get(self, file: str):
-        """Return :class:`HashAddress` from given id or path. If `file` does not
+        """Return :class:`HashAddress` from given checksum or path. If `file` does not
         refer to a valid file, then ``None`` is returned.
 
         Args:
-            file (str): Address ID or path of file.
+            file (str): Checksum or path of file.
 
         Returns:
             HashAddress: File's hash address.
@@ -169,10 +169,10 @@ class EverCas(object):
             return HashAddress(self.unshard(realpath), self.relpath(realpath), realpath)
 
     def open(self, file: str, mode: str = "rb"):
-        """Return open buffer object from given id or path.
+        """Return open buffer object from given checksum or path.
 
         Args:
-            file (str): Address ID or path of file.
+            file (str): Checksum or path of file.
             mode (str, optional): Mode to open file in. Defaults to ``'rb'``.
 
         Returns:
@@ -188,11 +188,11 @@ class EverCas(object):
         return io.open(realpath, mode)
 
     def delete(self, file: str):
-        """Delete file using id or path. Remove any empty directories after
+        """Delete file using checksum or path. Remove any empty directories after
         deleting. No exception is raised if file doesn't exist.
 
         Args:
-            file (str): Address ID or path of file.
+            file (str): Checksum or path of file.
         """
         realpath = self.realpath(file)
         if realpath is None:
@@ -255,7 +255,7 @@ class EverCas(object):
         return total
 
     def exists(self, file: str):
-        """Check whether a given file id or path exists on disk."""
+        """Check whether a given file checksum or path exists on disk."""
         return bool(self.realpath(file))
 
     def haspath(self, path: str):
@@ -275,8 +275,9 @@ class EverCas(object):
         """Return `path` relative to the :attr:`root` directory."""
         return os.path.relpath(path, self.root)
 
+    # TODO: rewrite
     def realpath(self, file: str):
-        """Attempt to determine the real path of a file id or path through
+        """Attempt to determine the real path of a file checksum or path through
         successive checking of candidate paths.
         """
 
@@ -290,19 +291,19 @@ class EverCas(object):
             return relpath
 
         # Check for sharded path.
-        filepath = self.idpath(file)
+        filepath = self.checksum_path(file)
         if os.path.isfile(filepath):
             return filepath
 
         # Could not determine a match.
         return None
 
-    def idpath(
+    def checksum_path(
         self,
-        id: str,
+        checksum: str,
     ):
-        """Build the file path for a given hash id."""
-        paths = self.shard(id)
+        """Build the file path for a given checksum."""
+        paths = self.shard(checksum)
 
         return os.path.join(self.root, *paths)
 
@@ -314,9 +315,9 @@ class EverCas(object):
             hasher.update(to_bytes(data))
         return hasher.hexdigest()
 
-    def shard(self, id: str):
-        """Shard content ID into subfolders."""
-        return shard(id, self.prefix_depth, self.prefix_width)
+    def shard(self, checksum: str):
+        """Shard checksum into subfolders."""
+        return shard(checksum, self.prefix_depth, self.prefix_width)
 
     def unshard(self, path: str):
         """Unshard path to determine hash value."""
@@ -362,18 +363,18 @@ class EverCas(object):
             stream = Stream(path)
 
             with closing(stream):
-                id = self.computehash(stream)
+                checksum = self.computehash(stream)
 
-            expected_path = self.idpath(id)
+            expected_path = self.checksum_path(checksum)
 
             if expected_path != path:
                 yield (
                     path,
-                    HashAddress(id, self.relpath(expected_path), expected_path),
+                    HashAddress(checksum, self.relpath(expected_path), expected_path),
                 )
 
     def __contains__(self, file: str):
-        """Return whether a given file id or path is contained in the
+        """Return whether a given file checksum or path is contained in the
         :attr:`root` directory.
         """
         return self.exists(file)
@@ -418,10 +419,10 @@ def to_bytes(text: bytes | str):
 
 @dataclass
 class HashAddress:
-    """File address containing file's path on disk and it's content hash ID.
+    """File address containing file's path on disk and it's content checksum.
 
     Attributes:
-        id (str): Hash ID (hexdigest) of file contents.
+        checksum (str): Hexdigest of file contents.
         relpath (str): Relative path location to :attr:`EverCas.root`.
         abspath (str): Absolute path location of file on disk.
         is_duplicate (boolean, optional): Whether the hash address created was
@@ -429,7 +430,7 @@ class HashAddress:
             after a put operation. Defaults to ``False``.
     """
 
-    id: str
+    checksum: str
     relpath: str
     abspath: str
     is_duplicate: bool = False

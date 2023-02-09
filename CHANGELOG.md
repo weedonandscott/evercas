@@ -6,6 +6,7 @@
 - change default 'fmode', 'dmode' values
 - rename 'depth', 'width' to 'prefix_depth', 'prefix_width' and change their defaults
 - remove extension preservation on stored blobs
+- some minor internal refactoring
 
 ## v0.8.1
 
