@@ -20,6 +20,7 @@ var/
 sdist/
 develop-eggs/
 .installed.cfg
+__pypackages__/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -59,8 +60,12 @@ htmlcov
 .pydevproject
 .idea
 
-# Sphinx documentation
+# documentation
 docs/_build/
+site/
 
 # PyBuilder
 target/
+
+# linter
+.ruff_cache/

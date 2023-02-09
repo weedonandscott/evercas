@@ -1,26 +1,25 @@
 # -*- coding: utf-8 -*-
 
-from io import StringIO, BufferedReader
 import os
 import os.path
 import string
+from io import BufferedReader, StringIO
 
 import py
 import pytest
 
-import hashfs
-from hashfs._compat import to_bytes
-from hashfs.hashfs import PutStrategies
+import evercas
+from evercas.evercas import PutStrategies, to_bytes
 
 
 @pytest.fixture
 def testpath(tmpdir):
-    return tmpdir.mkdir("hashfs")
+    return tmpdir.mkdir("evercas")
 
 
 @pytest.fixture
 def testfile(testpath):
-    return testpath.join("hashfs.txt")
+    return testpath.join("evercas.txt")
 
 
 @pytest.fixture
@@ -48,7 +47,7 @@ def filepath(testfile):
 
 @pytest.fixture
 def fs(testpath):
-    return hashfs.HashFS(str(testpath))
+    return evercas.EverCas(str(testpath))
 
 
 @pytest.fixture
@@ -92,7 +91,7 @@ def assert_file_put(fs, address):
     assert all(len(part) == fs.width for part in dir_parts)
 
 
-def test_hashfs_put_stringio(fs, stringio):
+def test_evercas_put_stringio(fs, stringio):
     address = fs.put(stringio)
 
     assert_file_put(fs, address)
@@ -101,7 +100,7 @@ def test_hashfs_put_stringio(fs, stringio):
         assert fileobj.read() == to_bytes(stringio.getvalue())
 
 
-def test_hashfs_put_fileobj(fs, fileio):
+def test_evercas_put_fileobj(fs, fileio):
     address = fs.put(fileio)
 
     assert_file_put(fs, address)
@@ -110,7 +109,7 @@ def test_hashfs_put_fileobj(fs, fileio):
         assert fileobj.read() == fileio.read()
 
 
-def test_hashfs_put_file(fs, filepath):
+def test_evercas_put_file(fs, filepath):
     address = fs.put(str(filepath))
 
     assert_file_put(fs, address)
@@ -119,7 +118,7 @@ def test_hashfs_put_file(fs, filepath):
         assert fileobj.read() == to_bytes(filepath.read())
 
 
-def test_hashfs_put_duplicate(fs, stringio):
+def test_evercas_put_duplicate(fs, stringio):
     address_a = fs.put(stringio)
     address_b = fs.put(stringio)
 
@@ -128,7 +127,7 @@ def test_hashfs_put_duplicate(fs, stringio):
 
 
 @pytest.mark.parametrize("extension", ["txt", ".txt", "md", ".md"])
-def test_hashfs_put_extension(fs, stringio, extension):
+def test_evercas_put_extension(fs, stringio, extension):
     address = fs.put(stringio, extension)
 
     assert_file_put(fs, address)
@@ -137,7 +136,7 @@ def test_hashfs_put_extension(fs, stringio, extension):
     assert not address.is_duplicate
 
 
-def test_hashfs_put_simulate(fs, stringio):
+def test_evercas_put_simulate(fs, stringio):
     simulated_address = fs.put(stringio, simulate=True)
 
     assert not fs.exists(simulated_address.id)
@@ -150,7 +149,7 @@ def test_hashfs_put_simulate(fs, stringio):
     assert fs.put(stringio, simulate=True).is_duplicate
 
 
-def test_hashfs_put_error(fs):
+def test_evercas_put_error(fs):
     with pytest.raises(ValueError):
         fs.put("foo")
 
@@ -166,7 +165,7 @@ def test_put_strategy_lookup():
 
 
 @pytest.mark.parametrize("put_strategy", [None, "copy", PutStrategies.copy])
-def test_hashfs_default_put_strategy(fs, filepath, put_strategy):
+def test_evercas_default_put_strategy(fs, filepath, put_strategy):
     address = fs.put(str(filepath), put_strategy=put_strategy)
 
     assert_file_put(fs, address)
@@ -176,7 +175,7 @@ def test_hashfs_default_put_strategy(fs, filepath, put_strategy):
 
 
 @pytest.mark.parametrize("put_strategy", ["link", PutStrategies.link])
-def test_hashfs_link_put_strategy(fs, filepath, put_strategy):
+def test_evercas_link_put_strategy(fs, filepath, put_strategy):
     address = fs.put(str(filepath), put_strategy=put_strategy)
 
     assert_file_put(fs, address)
@@ -190,7 +189,7 @@ def test_hashfs_link_put_strategy(fs, filepath, put_strategy):
         assert os.path.samefile(address.abspath, str(filepath))
 
 
-def test_hashfs_link_put_strategy_fallback(fs, stringio):
+def test_evercas_link_put_strategy_fallback(fs, stringio):
     assert not hasattr(stringio, "name")
 
     address = fs.put(stringio, put_strategy="link")
@@ -201,7 +200,7 @@ def test_hashfs_link_put_strategy_fallback(fs, stringio):
         assert fileobj.read() == to_bytes(stringio.getvalue())
 
 
-def test_hashfs_address(fs, stringio):
+def test_evercas_address(fs, stringio):
     address = fs.put(stringio)
 
     assert fs.root not in address.relpath
@@ -224,7 +223,7 @@ def test_hashfs_address(fs, stringio):
         (True, TESTTREE_NUM_FILES_REC),
     ],
 )
-def test_hashfs_putdir(fs, testtree, recursive, exp_num_files, extensions):
+def test_evercas_putdir(fs, testtree, recursive, exp_num_files, extensions):
     putfiles = list(fs.putdir(str(testtree), recursive=recursive))
 
     for src, address in putfiles:
@@ -246,7 +245,7 @@ def test_hashfs_putdir(fs, testtree, recursive, exp_num_files, extensions):
         False,
     ],
 )
-def test_hashfs_put_lowercase_extensions(fs, stringio, lowercase_extensions):
+def test_evercas_put_lowercase_extensions(fs, stringio, lowercase_extensions):
     fs.lowercase_extensions = lowercase_extensions
     address = fs.put(stringio, extension="TXT")
 
@@ -268,7 +267,7 @@ def test_hashfs_put_lowercase_extensions(fs, stringio, lowercase_extensions):
         ("txt", "abspath"),
     ],
 )
-def test_hashfs_open(fs, stringio, extension, address_attr):
+def test_evercas_open(fs, stringio, extension, address_attr):
     address = fs.put(stringio, extension)
 
     fileobj = fs.open(getattr(address, address_attr))
@@ -279,12 +278,12 @@ def test_hashfs_open(fs, stringio, extension, address_attr):
     fileobj.close()
 
 
-def test_hashfs_open_error(fs):
+def test_evercas_open_error(fs):
     with pytest.raises(IOError):
         fs.open("invalid")
 
 
-def test_hashfs_exists(fs, stringio):
+def test_evercas_exists(fs, stringio):
     address = fs.put(stringio)
 
     assert fs.exists(address.id)
@@ -292,7 +291,7 @@ def test_hashfs_exists(fs, stringio):
     assert fs.exists(address.abspath)
 
 
-def test_hashfs_contains(fs, stringio):
+def test_evercas_contains(fs, stringio):
     address = fs.put(stringio)
 
     assert address.id in fs
@@ -300,7 +299,7 @@ def test_hashfs_contains(fs, stringio):
     assert address.abspath in fs
 
 
-def test_hashfs_get(fs, stringio):
+def test_evercas_get(fs, stringio):
     address = fs.put(stringio)
 
     assert not address.is_duplicate
@@ -311,18 +310,18 @@ def test_hashfs_get(fs, stringio):
 
 
 @pytest.mark.parametrize("address_attr", ["id", "abspath"])
-def test_hashfs_delete(fs, stringio, address_attr):
+def test_evercas_delete(fs, stringio, address_attr):
     address = fs.put(stringio)
 
     fs.delete(getattr(address, address_attr))
     assert len(os.listdir(fs.root)) == 0
 
 
-def test_hashfs_delete_error(fs):
+def test_evercas_delete_error(fs):
     fs.delete("invalid")
 
 
-def test_hashfs_remove_empty(fs):
+def test_evercas_remove_empty(fs):
     subpath1 = os.path.join(fs.root, "1", "2", "3")
     subpath2 = os.path.join(fs.root, "1", "4", "5")
     subpath3 = os.path.join(fs.root, "6", "7", "8")
@@ -343,7 +342,7 @@ def test_hashfs_remove_empty(fs):
     assert not os.path.exists(subpath3)
 
 
-def test_hashfs_remove_empty_subdir(fs):
+def test_evercas_remove_empty_subdir(fs):
     fs.remove_empty(fs.root)
 
     assert os.path.exists(fs.root)
@@ -353,19 +352,19 @@ def test_hashfs_remove_empty_subdir(fs):
     assert os.path.exists(fs.root)
 
 
-def test_hashfs_unshard(fs, stringio):
+def test_evercas_unshard(fs, stringio):
     address = fs.put(stringio)
     assert fs.unshard(address.abspath) == address.id
 
 
-def test_hashfs_unshard_error(fs):
+def test_evercas_unshard_error(fs):
     with pytest.raises(ValueError):
         fs.unshard("invalid")
 
 
-def test_hashfs_repair(fs, stringio):
+def test_evercas_repair(fs, stringio):
     original_address = fs.put(stringio)
-    newfs = hashfs.HashFS(fs.root, depth=1)
+    newfs = evercas.EverCas(fs.root, depth=1)
 
     repaired = newfs.repair()
 
@@ -377,9 +376,9 @@ def test_hashfs_repair(fs, stringio):
     assert_file_put(newfs, address)
 
 
-def test_hashfs_repair_duplicates(fs, stringio):
+def test_evercas_repair_duplicates(fs, stringio):
     original_address = fs.put(stringio)
-    newfs = hashfs.HashFS(fs.root, depth=1)
+    newfs = evercas.EverCas(fs.root, depth=1)
     newfs.put(stringio)
 
     repaired = newfs.repair()
@@ -392,7 +391,7 @@ def test_hashfs_repair_duplicates(fs, stringio):
     assert_file_put(newfs, address)
 
 
-def test_hashfs_files(fs):
+def test_evercas_files(fs):
     count = 5
     addresses = put_range(fs, count)
     files = list(fs.files())
@@ -406,7 +405,7 @@ def test_hashfs_files(fs):
         assert addresses[file].id == fs.unshard(file)
 
 
-def test_hashfs_iter(fs):
+def test_evercas_iter(fs):
     count = 5
     addresses = put_range(fs, count)
     test_count = 0
@@ -421,19 +420,19 @@ def test_hashfs_iter(fs):
     assert test_count == count
 
 
-def test_hashfs_count(fs):
+def test_evercas_count(fs):
     count = 5
     put_range(fs, count)
     assert fs.count() == count
 
 
-def test_hashfs_len(fs):
+def test_evercas_len(fs):
     count = 5
     put_range(fs, count)
     assert len(fs) == count
 
 
-def test_hashfs_folders(fs):
+def test_evercas_folders(fs):
     count = 5
     put_range(fs, count)
     folders = list(fs.folders())
@@ -445,7 +444,7 @@ def test_hashfs_folders(fs):
         assert os.path.isfile(os.path.join(folder, os.listdir(folder)[0]))
 
 
-def test_hashfs_size(fs):
+def test_evercas_size(fs):
     fs.put(StringIO("{0}".format(string.ascii_lowercase)))
     fs.put(StringIO("{0}".format(string.ascii_uppercase)))
     expected = len(string.ascii_lowercase) + len(string.ascii_uppercase)
