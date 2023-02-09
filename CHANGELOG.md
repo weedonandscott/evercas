@@ -3,6 +3,7 @@
 ## Upcoming changes
 
 - Hash exclusively using `blake3`
+- change default 'fmode', 'dmode' values
 
 ## v0.8.1
 

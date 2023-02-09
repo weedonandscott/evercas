@@ -28,11 +28,12 @@ class EverCas(object):
         width (int, optional): Width of each subfolder to create when saving a
             file.
         fmode (int, optional): File mode permission to set when adding files to
-            directory. Defaults to ``0o664`` which allows owner/group to
-            read/write and everyone else to read.
+            directory. It is strongly recommended to keep the default ``0o400`` which
+            allows only owner to only read the file, thus avoiding accidental loss of
+            data (e.g ``echo oops > file``)
         dmode (int, optional): Directory mode permission to set for
-            subdirectories. Defaults to ``0o755`` which allows owner/group to
-            read/write and everyone else to read and everyone to execute.
+            subdirectories. Defaults to ``0o700`` which allows owner read, write and
+            execute.
         put_strategy (mixed, optional): Default ``put_strategy`` for
             :meth:`put` method. See :meth:`put` for more information. Defaults
             to :attr:`PutStrategies.copy`.
@@ -45,7 +46,6 @@ class EverCas(object):
         root: str,
         depth: int = 4,
         width: int = 1,
-        # TODO: get rid of these?
         fmode: int = 0o400,
         dmode: int = 0o700,
         put_strategy: str | None = None,
