@@ -7,11 +7,11 @@ import errno
 import io
 import os
 import shutil
-from contextlib import closing
 from dataclasses import dataclass
 from tempfile import NamedTemporaryFile
-from typing import BinaryIO, Callable
+from typing import Callable
 
+import anyio
 from blake3 import blake3
 
 from .utils import issubdir, shard
@@ -54,9 +54,9 @@ class EverCas(object):
         self.dmode = dmode
         self.put_strategy = PutStrategies.get(put_strategy) or PutStrategies.copy
 
-    def put(
+    async def put(
         self,
-        file: BinaryIO | str,
+        file: str | os.PathLike[str],
         put_strategy: str | None = None,
         dry_run: bool = False,
     ):
@@ -72,12 +72,12 @@ class EverCas(object):
             dry_run (bool, optional): Return the :class:`HashAddress` of the
                 file that would be appended but don't do anything.
 
-        Put strategies are functions ``(evercas, stream, filepath)`` where
+        Put strategies are functions ``(evercas, source_path, dest_path)`` where
         ``evercas`` is the :class:`EverCas` instance from which :meth:`put` was
-        called; ``stream`` is the :class:`Stream` object representing the
-        data to add; and ``filepath`` is the string absolute file path inside
+        called; ``path`` is the :class:`anyio.Path` object representing the
+        data to add; and ``dest_path`` is the string absolute file path inside
         the EverCas where it needs to be saved. The put strategy function should
-        create the path ``filepath`` containing the data in ``stream``.
+        create the path ``dest_path`` containing the data in ``source_path``.
 
         There are currently two built-in put strategies: "copy" (the default)
         and "link". "link" attempts to hard link the file into the EverCas if
@@ -87,27 +87,26 @@ class EverCas(object):
         Returns:
             HashAddress: File's hash address.
         """
-        stream = Stream(file)
+        source_path = anyio.Path(file)
 
-        with closing(stream):
-            checksum = self.computehash(stream)
-            filepath = self.checksum_path(checksum)
+        checksum = await self.compute_checksum(source_path)
+        checksum_path = self.checksum_path(checksum)
 
-            # Only move file if it doesn't already exist.
-            if not os.path.isfile(filepath):
-                is_duplicate = False
-                if not dry_run:
-                    self.makepath(os.path.dirname(filepath))
-                    put_strategy_callable = (
-                        PutStrategies.get(put_strategy)
-                        or self.put_strategy
-                        or PutStrategies.copy
-                    )
-                    put_strategy_callable(self, stream, filepath)
-            else:
-                is_duplicate = True
+        # Only move file if it doesn't already exist.
+        if not os.path.isfile(checksum_path):
+            is_duplicate = False
+            if not dry_run:
+                self.makepath(os.path.dirname(checksum_path))
+                put_strategy_callable = (
+                    PutStrategies.get(put_strategy)
+                    or self.put_strategy
+                    or PutStrategies.copy
+                )
+                put_strategy_callable(self, source_path, checksum_path)
+        else:
+            is_duplicate = True
 
-        return HashAddress(checksum, self.relpath(filepath), is_duplicate)
+        return HashAddress(checksum, self.relpath(checksum_path), is_duplicate)
 
     def putdir(
         self,
@@ -131,8 +130,8 @@ class EverCas(object):
             address = self.put(file, put_strategy=put_strategy, dry_run=dry_run)
             yield (file, address)
 
-    def mktempfile(self, stream: Stream):
-        """Create a named temporary file from a :class:`Stream` object and
+    async def mktempfile(self, source_file_path: anyio.Path):
+        """Create a named temporary file from a :class:`anyio.Path` object and
         return its filename.
         """
         tmp = NamedTemporaryFile(delete=False)
@@ -144,8 +143,13 @@ class EverCas(object):
         finally:
             os.umask(oldmask)
 
-        for data in stream:
-            tmp.write(to_bytes(data))
+        chunk_size = (await source_file_path.stat()).st_blksize
+        async with await source_file_path.open("rb") as source_file:
+            while True:
+                data = await source_file.read(chunk_size)
+                if not data:
+                    break
+                tmp.write(to_bytes(data))
 
         tmp.close()
 
@@ -311,12 +315,30 @@ class EverCas(object):
 
         return os.path.join(self.root, *paths)
 
-    def computehash(self, stream: Stream):
-        """Compute hash of file."""
+    async def compute_checksum(self, file: anyio.Path):
+        """Compute checksum of file."""
+
+        file_stat = await file.stat()
+        blksize = file_stat.st_blksize
+        file_size = file_stat.st_size
+
+        if file_size > 1.5 * 1024 * 1024:  # > 1.5 MiB
+            # block-aligned size closest to 32MiB, a benchmark sweet-spot
+            chunk_size = (32 * 1024 * 1024 // blksize) * blksize
+            max_threads = blake3.AUTO
+        else:
+            chunk_size = blksize
+            max_threads = 4
+
         # TODO: benchmark and tweak accordingly
-        hasher = blake3(max_threads=blake3.AUTO)
-        for data in stream:
-            hasher.update(to_bytes(data))
+        hasher = blake3(max_threads=max_threads)
+        async with await file.open("rb") as f:
+            while True:
+                data = await f.read(chunk_size)
+                if not data:
+                    break
+                hasher.update(data)
+
         return hasher.hexdigest()
 
     def shard(self, checksum: str):
@@ -333,16 +355,15 @@ class EverCas(object):
 
         return os.path.splitext(self.relpath(path))[0].replace(os.sep, "")
 
-    def repair(self):
+    async def repair(self):
         """Repair any file locations whose content address doesn't match it's
         file path.
         """
         repaired: list[tuple[str, HashAddress]] = []
-        corrupted = tuple(self.corrupted())
         oldmask = os.umask(0)
 
         try:
-            for corrupt_path, expected_address in corrupted:
+            async for corrupt_path, expected_address in self.corrupted():
                 expected_abspath = self.abspath(expected_address.path)
                 if os.path.isfile(expected_abspath):
                     # File already exists so just delete corrupted path.
@@ -353,22 +374,19 @@ class EverCas(object):
                     shutil.move(corrupt_path, expected_abspath)
 
                 os.chmod(expected_abspath, self.fmode)
-                repaired.append((corrupt_path, expected_address))
+                repaired.append((str(corrupt_path), expected_address))
         finally:
             os.umask(oldmask)
 
         return repaired
 
-    def corrupted(self):
+    async def corrupted(self):
         """Return generator that yields corrupted files as ``(path, address)``
         where ``path`` is the path of the corrupted file and ``address`` is
         the :class:`HashAddress` of the expected location.
         """
         for path in self.files():
-            stream = Stream(path)
-
-            with closing(stream):
-                checksum = self.computehash(stream)
+            checksum = await self.compute_checksum(path)
 
             expected_path = self.checksum_path(checksum)
 
@@ -439,77 +457,6 @@ class HashAddress:
     is_duplicate: bool = False
 
 
-class Stream(object):
-    """Common interface for file-like objects.
-
-    The input `obj` can be a file-like object or a path to a file. If `obj` is
-    a path to a file, then it will be opened until :meth:`close` is called.
-    If `obj` is a file-like object, then it's original position will be
-    restored when :meth:`close` is called instead of closing the object
-    automatically. Closing of the stream is deferred to whatever process passed
-    the stream in.
-
-    Successive readings of the stream is supported without having to manually
-    set it's position back to ``0``.
-    """
-
-    def __init__(self, obj: BinaryIO | str):
-        if isinstance(obj, str) and os.path.isfile(obj):
-            obj = io.open(obj, "rb")
-            pos = None
-        elif isinstance(obj, BinaryIO):
-            pos = obj.tell()
-        else:
-            raise ValueError("Object must be a valid file path or a BinaryIO object")
-
-        try:
-            file_stat = os.stat(obj.name)
-            buffer_size = file_stat.st_blksize
-        except Exception:
-            buffer_size = 8192
-
-        try:
-            # Expose the original file path if available.
-            # This allows put strategies to use OS functions, working with
-            # paths, instead of being limited to the API provided by Python
-            # file-like objects
-            # name property can also hold int fd, so we make it None in that
-            # case
-            self.name: str | None = None if isinstance(obj.name, int) else obj.name
-        except AttributeError:
-            self.name = None
-
-        self._obj = obj
-        self._pos = pos
-        self._buffer_size = buffer_size
-
-    def __iter__(self):
-        """Read underlying IO object and yield results. Return object to
-        original position if we didn't open it originally.
-        """
-        self._obj.seek(0)
-
-        while True:
-            data = self._obj.read(self._buffer_size)
-
-            if not data:
-                break
-
-            yield data
-
-        if self._pos is not None:
-            self._obj.seek(self._pos)
-
-    def close(self):
-        """Close underlying IO object if we opened it, else return it to
-        original position.
-        """
-        if self._pos is None:
-            self._obj.close()
-        else:
-            self._obj.seek(self._pos)
-
-
 class PutStrategies:
     """Namespace for built-in put strategies.
 
@@ -518,7 +465,9 @@ class PutStrategies:
     """
 
     @classmethod
-    def get(cls, method: str | None) -> Callable[[EverCas, Stream, str], None] | None:
+    def get(
+        cls, method: str | None
+    ) -> Callable[[EverCas, anyio.Path, str], None] | None:
         """Look up a strategy by name string. You can also pass a function
         which will be returned as is."""
         if method:
@@ -530,30 +479,29 @@ class PutStrategies:
                 return getattr(cls, method)
 
     @staticmethod
-    def copy(evercas: EverCas, src_stream: Stream, dst_path: str) -> None:
+    async def copy(evercas: EverCas, src_path: anyio.Path, dest_path: str) -> None:
         """The default copy put strategy, writes the file object to a
         temporary file on disk and then moves it into place."""
-        shutil.move(evercas.mktempfile(src_stream), dst_path)
+        tmp_path = await evercas.mktempfile(src_path)
+        shutil.move(tmp_path, dest_path)
 
     @classmethod
-    def link(cls, evercas: EverCas, src_stream: Stream, dst_path: str) -> None:
+    async def link(cls, evercas: EverCas, src_path: anyio.Path, dest_path: str) -> None:
         """Use os.link if available to create a hard link to the original
         file if the EverCas and the original file reside on the same
         filesystem and the filesystem supports hard links."""
 
         if not hasattr(os, "link"):
-            return PutStrategies.copy(evercas, src_stream, dst_path)
+            return await cls.copy(evercas, src_path, dest_path)
 
-        # Get the original file path exposed by the Stream instance
-        src_path = src_stream.name
         # No path available because e.g. a StringIO was used
         if not src_path:
             # Just copy
-            return cls.copy(evercas, src_stream, dst_path)
+            return await cls.copy(evercas, src_path, dest_path)
 
         try:
             # Try to create the hard link
-            os.link(src_path, dst_path)
+            os.link(src_path, dest_path)
         except EnvironmentError as e:
             # These are link specific errors. If any of these 3 are raised
             # we try to copy instead
@@ -564,8 +512,8 @@ class PutStrategies:
             # will be raised again when we try to copy)
             if e.errno not in (errno.EMLINK, errno.EXDEV, errno.EPERM):
                 raise
-            return cls.copy(evercas, src_stream, dst_path)
+            return await cls.copy(evercas, src_path, dest_path)
         else:
             # After creating the hard link, make sure it has the correct
             # file permissions
-            os.chmod(dst_path, evercas.fmode)
+            os.chmod(dest_path, evercas.fmode)

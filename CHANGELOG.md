@@ -2,11 +2,12 @@
 
 ## Upcoming changes
 
-- Hash exclusively using `blake3`
-- Change default 'fmode', 'dmode' values
-- Rename 'depth', 'width' to 'prefix_depth', 'prefix_width' and change their defaults
-- Remove extension preservation on stored blobs
-- Only store relative path in `HashAddress`
+- BREAKING: Hash exclusively using `blake3`
+- BREAKING: Change default 'fmode', 'dmode' values
+- BREAKING: Rename 'depth', 'width' to 'prefix_depth', 'prefix_width' and change their defaults
+- BREAKING: Remove extension preservation on stored blobs
+- BREAKING: Only store relative path in `HashAddress`
+- BREAKING: replace own `Stream` class with `anyio.Path`. Many of the methods are now `async`
 - Some minor internal refactoring
 
 ## v0.8.1
@@ -14,7 +15,7 @@
 - Merge @x11x changes
     - Put strategies
     - Recursive directory put
-- Drop Python 2.x support, Python 3.10+ required
+- BREAKING: Drop Python 2.x support, Python 3.10+ required
 - Adopt PDM
 - Switch from Sphinx and RST to MkDocs and Markdown
 - Adopt black, ruff
