@@ -66,3 +66,6 @@ site/
 
 # PyBuilder
 target/
+
+# linter
+.ruff_cache/

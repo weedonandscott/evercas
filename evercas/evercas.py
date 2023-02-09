@@ -1,15 +1,18 @@
 """Module for EverCas class.
 """
 
+from __future__ import annotations
+
 import errno
 import glob
 import hashlib
 import io
 import os
 import shutil
-from collections import namedtuple
 from contextlib import closing
+from dataclasses import dataclass
 from tempfile import NamedTemporaryFile
+from typing import BinaryIO, Callable
 
 from .utils import issubdir, shard
 
@@ -41,14 +44,14 @@ class EverCas(object):
 
     def __init__(
         self,
-        root,
-        depth=4,
-        width=1,
-        algorithm="sha256",
-        fmode=0o664,
-        dmode=0o755,
-        put_strategy=None,
-        lowercase_extensions=False,
+        root: str,
+        depth: int = 4,
+        width: int = 1,
+        algorithm: str = "sha256",
+        fmode: int = 0o664,
+        dmode: int = 0o755,
+        put_strategy: str | None = None,
+        lowercase_extensions: bool = False,
     ):
         self.root = os.path.realpath(root)
         self.depth = depth
@@ -59,7 +62,13 @@ class EverCas(object):
         self.put_strategy = PutStrategies.get(put_strategy) or PutStrategies.copy
         self.lowercase_extensions = lowercase_extensions
 
-    def put(self, file, extension=None, put_strategy=None, simulate=False):
+    def put(
+        self,
+        file: BinaryIO | str,
+        extension: str | None = None,
+        put_strategy: str | None = None,
+        simulate: bool = False,
+    ):
         """Store contents of `file` on disk using its content hash for the
         address.
 
@@ -103,18 +112,25 @@ class EverCas(object):
                 is_duplicate = False
                 if not simulate:
                     self.makepath(os.path.dirname(filepath))
-                    put_strategy = (
+                    put_strategy_callable = (
                         PutStrategies.get(put_strategy)
                         or self.put_strategy
                         or PutStrategies.copy
                     )
-                    put_strategy(self, stream, filepath)
+                    put_strategy_callable(self, stream, filepath)
             else:
                 is_duplicate = True
 
         return HashAddress(id, self.relpath(filepath), filepath, is_duplicate)
 
-    def putdir(self, root, extensions=True, recursive=False, **kwargs):
+    def putdir(
+        self,
+        root: str,
+        extensions: bool = True,
+        recursive: bool = False,
+        put_strategy: str | None = None,
+        simulate: bool = False,
+    ):
         """Put all files from a directory.
 
         Args:
@@ -131,22 +147,23 @@ class EverCas(object):
         """
         for file in find_files(root, recursive=recursive):
             extension = os.path.splitext(file)[1] if extensions else None
-            address = self.put(file, extension=extension, **kwargs)
+            address = self.put(
+                file, extension=extension, put_strategy=put_strategy, simulate=simulate
+            )
             yield (file, address)
 
-    def _mktempfile(self, stream):
+    def mktempfile(self, stream: Stream):
         """Create a named temporary file from a :class:`Stream` object and
         return its filename.
         """
         tmp = NamedTemporaryFile(delete=False)
 
-        if self.fmode is not None:
-            oldmask = os.umask(0)
+        oldmask = os.umask(0)
 
-            try:
-                os.chmod(tmp.name, self.fmode)
-            finally:
-                os.umask(oldmask)
+        try:
+            os.chmod(tmp.name, self.fmode)
+        finally:
+            os.umask(oldmask)
 
         for data in stream:
             tmp.write(to_bytes(data))
@@ -155,7 +172,7 @@ class EverCas(object):
 
         return tmp.name
 
-    def get(self, file):
+    def get(self, file: str):
         """Return :class:`HashAddress` from given id or path. If `file` does not
         refer to a valid file, then ``None`` is returned.
 
@@ -172,7 +189,7 @@ class EverCas(object):
         else:
             return HashAddress(self.unshard(realpath), self.relpath(realpath), realpath)
 
-    def open(self, file, mode="rb"):
+    def open(self, file: str, mode: str = "rb"):
         """Return open buffer object from given id or path.
 
         Args:
@@ -191,7 +208,7 @@ class EverCas(object):
 
         return io.open(realpath, mode)
 
-    def delete(self, file):
+    def delete(self, file: str):
         """Delete file using id or path. Remove any empty directories after
         deleting. No exception is raised if file doesn't exist.
 
@@ -209,7 +226,7 @@ class EverCas(object):
         else:
             self.remove_empty(os.path.dirname(realpath))
 
-    def remove_empty(self, subpath):
+    def remove_empty(self, subpath: str):
         """Successively remove all empty folders starting with `subpath` and
         proceeding "up" through directory tree until reaching the :attr:`root`
         folder.
@@ -236,7 +253,7 @@ class EverCas(object):
         """Return generator that yields all folders in the :attr:`root`
         directory that contain files.
         """
-        for folder, subfolders, files in os.walk(self.root):
+        for folder, _, files in os.walk(self.root):
             if files:
                 yield folder
 
@@ -258,33 +275,34 @@ class EverCas(object):
 
         return total
 
-    def exists(self, file):
+    def exists(self, file: str):
         """Check whether a given file id or path exists on disk."""
         return bool(self.realpath(file))
 
-    def haspath(self, path):
+    def haspath(self, path: str):
         """Return whether `path` is a subdirectory of the :attr:`root`
         directory.
         """
         return issubdir(path, self.root)
 
-    def makepath(self, path):
+    def makepath(self, path: str):
         """Physically create the folder path on disk."""
         try:
             os.makedirs(path, self.dmode)
         except FileExistsError:
             assert os.path.isdir(path), "expected {} to be a directory".format(path)
 
-    def relpath(self, path):
+    def relpath(self, path: str):
         """Return `path` relative to the :attr:`root` directory."""
         return os.path.relpath(path, self.root)
 
-    def realpath(self, file):
+    def realpath(self, file: str):
         """Attempt to determine the real path of a file id or path through
         successive checking of candidate paths. If the real path is stored with
         an extension, the path is considered a match if the basename matches
         the expected file path of the id.
         """
+
         # Check for absolute path.
         if os.path.isfile(file):
             return file
@@ -307,7 +325,7 @@ class EverCas(object):
         # Could not determine a match.
         return None
 
-    def idpath(self, id, extension=""):
+    def idpath(self, id: str, extension: str | None = ""):
         """Build the file path for a given hash id. Optionally, append a
         file extension.
         """
@@ -320,18 +338,18 @@ class EverCas(object):
 
         return os.path.join(self.root, *paths) + extension
 
-    def computehash(self, stream):
+    def computehash(self, stream: Stream):
         """Compute hash of file using :attr:`algorithm`."""
         hashobj = hashlib.new(self.algorithm)
         for data in stream:
             hashobj.update(to_bytes(data))
         return hashobj.hexdigest()
 
-    def shard(self, id):
+    def shard(self, id: str):
         """Shard content ID into subfolders."""
         return shard(id, self.depth, self.width)
 
-    def unshard(self, path):
+    def unshard(self, path: str):
         """Unshard path to determine hash value."""
         if not self.haspath(path):
             raise ValueError(
@@ -341,11 +359,11 @@ class EverCas(object):
 
         return os.path.splitext(self.relpath(path))[0].replace(os.sep, "")
 
-    def repair(self, extensions=True):
+    def repair(self, extensions: bool = True):
         """Repair any file locations whose content address doesn't match it's
         file path.
         """
-        repaired = []
+        repaired: list[tuple[str, HashAddress]] = []
         corrupted = tuple(self.corrupted(extensions=extensions))
         oldmask = os.umask(0)
 
@@ -366,7 +384,7 @@ class EverCas(object):
 
         return repaired
 
-    def corrupted(self, extensions=True):
+    def corrupted(self, extensions: bool = True):
         """Return generator that yields corrupted files as ``(path, address)``
         where ``path`` is the path of the corrupted file and ``address`` is
         the :class:`HashAddress` of the expected location.
@@ -386,7 +404,7 @@ class EverCas(object):
                     HashAddress(id, self.relpath(expected_path), expected_path),
                 )
 
-    def __contains__(self, file):
+    def __contains__(self, file: str):
         """Return whether a given file id or path is contained in the
         :attr:`root` directory.
         """
@@ -401,9 +419,9 @@ class EverCas(object):
         return self.count()
 
 
-def find_files(path, recursive=False):
+def find_files(path: str, recursive: bool = False):
     if recursive:
-        for folder, subfolders, files in os.walk(path):
+        for folder, _, files in os.walk(path):
             for file in files:
                 yield os.path.join(folder, file)
     else:
@@ -411,7 +429,7 @@ def find_files(path, recursive=False):
             yield file
 
 
-def list_dir_files(path):
+def list_dir_files(path: str):
     it = os.scandir(path)
     try:
         for file in it:
@@ -424,15 +442,14 @@ def list_dir_files(path):
             pass
 
 
-def to_bytes(text):
+def to_bytes(text: bytes | str):
     if not isinstance(text, bytes):
         text = bytes(text, "utf8")
     return text
 
 
-class HashAddress(
-    namedtuple("HashAddress", ["id", "relpath", "abspath", "is_duplicate"])
-):
+@dataclass
+class HashAddress:
     """File address containing file's path on disk and it's content hash ID.
 
     Attributes:
@@ -444,8 +461,10 @@ class HashAddress(
             after a put operation. Defaults to ``False``.
     """
 
-    def __new__(cls, id, relpath, abspath, is_duplicate=False):
-        return super(HashAddress, cls).__new__(cls, id, relpath, abspath, is_duplicate)
+    id: str
+    relpath: str
+    abspath: str
+    is_duplicate: bool = False
 
 
 class Stream(object):
@@ -462,14 +481,14 @@ class Stream(object):
     set it's position back to ``0``.
     """
 
-    def __init__(self, obj):
-        if hasattr(obj, "read"):
-            pos = obj.tell()
-        elif os.path.isfile(obj):
+    def __init__(self, obj: BinaryIO | str):
+        if isinstance(obj, str) and os.path.isfile(obj):
             obj = io.open(obj, "rb")
             pos = None
+        elif isinstance(obj, BinaryIO):
+            pos = obj.tell()
         else:
-            raise ValueError("Object must be a valid file path or a readable object")
+            raise ValueError("Object must be a valid file path or a BinaryIO object")
 
         try:
             file_stat = os.stat(obj.name)
@@ -484,7 +503,7 @@ class Stream(object):
             # file-like objects
             # name property can also hold int fd, so we make it None in that
             # case
-            self.name = None if isinstance(obj.name, int) else obj.name
+            self.name: str | None = None if isinstance(obj.name, int) else obj.name
         except AttributeError:
             self.name = None
 
@@ -527,54 +546,54 @@ class PutStrategies:
     """
 
     @classmethod
-    def get(cls, method):
+    def get(cls, method: str | None) -> Callable[[EverCas, Stream, str], None] | None:
         """Look up a strategy by name string. You can also pass a function
         which will be returned as is."""
         if method:
             if method == "get":
                 raise ValueError("invalid put strategy name, 'get'")
-            return method if callable(method) else getattr(cls, method)
+            if callable(method):
+                return method
+            elif callable(getattr(cls, method)):
+                return getattr(cls, method)
 
     @staticmethod
-    def copy(evercas, src_stream, dst_path):
+    def copy(evercas: EverCas, src_stream: Stream, dst_path: str) -> None:
         """The default copy put strategy, writes the file object to a
         temporary file on disk and then moves it into place."""
-        shutil.move(evercas._mktempfile(src_stream), dst_path)
+        shutil.move(evercas.mktempfile(src_stream), dst_path)
 
-    if hasattr(os, "link"):
+    @classmethod
+    def link(cls, evercas: EverCas, src_stream: Stream, dst_path: str) -> None:
+        """Use os.link if available to create a hard link to the original
+        file if the EverCas and the original file reside on the same
+        filesystem and the filesystem supports hard links."""
 
-        @classmethod
-        def link(cls, evercas, src_stream, dst_path):
-            """Use os.link if available to create a hard link to the original
-            file if the EverCas and the original file reside on the same
-            filesystem and the filesystem supports hard links."""
-            # Get the original file path exposed by the Stream instance
-            src_path = src_stream.name
-            # No path available because e.g. a StringIO was used
-            if not src_path:
-                # Just copy
-                return cls.copy(evercas, src_stream, dst_path)
+        if not hasattr(os, "link"):
+            return PutStrategies.copy(evercas, src_stream, dst_path)
 
-            try:
-                # Try to create the hard link
-                os.link(src_path, dst_path)
-            except EnvironmentError as e:
-                # These are link specific errors. If any of these 3 are raised
-                # we try to copy instead
-                # EMLINK - src already has the maximum number of links to it
-                # EXDEV - invalid cross-device link
-                # EPERM - the dst filesystem does not support hard links
-                # (note EPERM could also be another permissions error; these
-                # will be raised again when we try to copy)
-                if e.errno not in (errno.EMLINK, errno.EXDEV, errno.EPERM):
-                    raise
-                return cls.copy(evercas, src_stream, dst_path)
-            else:
-                # After creating the hard link, make sure it has the correct
-                # file permissions
-                os.chmod(dst_path, evercas.fmode)
+        # Get the original file path exposed by the Stream instance
+        src_path = src_stream.name
+        # No path available because e.g. a StringIO was used
+        if not src_path:
+            # Just copy
+            return cls.copy(evercas, src_stream, dst_path)
 
-    else:
-        # Platform does not support os.link, so use the default copy strategy
-        # instead
-        link = copy
+        try:
+            # Try to create the hard link
+            os.link(src_path, dst_path)
+        except EnvironmentError as e:
+            # These are link specific errors. If any of these 3 are raised
+            # we try to copy instead
+            # EMLINK - src already has the maximum number of links to it
+            # EXDEV - invalid cross-device link
+            # EPERM - the dst filesystem does not support hard links
+            # (note EPERM could also be another permissions error; these
+            # will be raised again when we try to copy)
+            if e.errno not in (errno.EMLINK, errno.EXDEV, errno.EPERM):
+                raise
+            return cls.copy(evercas, src_stream, dst_path)
+        else:
+            # After creating the hard link, make sure it has the correct
+            # file permissions
+            os.chmod(dst_path, evercas.fmode)

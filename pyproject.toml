@@ -33,6 +33,7 @@ build-backend = "pdm.pep517.api"
 [tool.pdm.dev-dependencies]
 lint = [
     "ruff==0.0.243",
+    "pyright>=1.1.293",
 ]
 test = [
     "pytest==7.2.1",
@@ -46,10 +47,15 @@ docs = [
     "mkdocstrings[python]==0.20.0",
 ]
 [tool.pdm.scripts]
-build = "pdm build"
+lint = {composite = ["pyright", "ruff check .", "black ."]}
+build = {composite = ["lint", "pdm build"]}
 deploy-pypi = "twine upload dist/*"
 deploy-docs = "mkdocs gh-deploy"
 release = {composite = ["build", "deploy-pypi", "deploy-docs"]}
 
 [tool.ruff]
 select = ["E", "F", "I001"]
+
+[tool.pyright]
+strict=["**/**"]
+include=["./*.py", "evercas/**"]
