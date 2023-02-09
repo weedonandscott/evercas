@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import errno
-import glob
 import io
 import os
 import shutil
@@ -37,8 +36,6 @@ class EverCas(object):
         put_strategy (mixed, optional): Default ``put_strategy`` for
             :meth:`put` method. See :meth:`put` for more information. Defaults
             to :attr:`PutStrategies.copy`.
-        lowercase_extensions (bool, optional): Normalize all file extensions
-            to lower case when adding files. Defaults to ``False``.
     """
 
     def __init__(
@@ -49,7 +46,6 @@ class EverCas(object):
         fmode: int = 0o400,
         dmode: int = 0o700,
         put_strategy: str | None = None,
-        lowercase_extensions: bool = False,
     ):
         self.root = os.path.realpath(root)
         self.prefix_depth = prefix_depth
@@ -57,12 +53,10 @@ class EverCas(object):
         self.fmode = fmode
         self.dmode = dmode
         self.put_strategy = PutStrategies.get(put_strategy) or PutStrategies.copy
-        self.lowercase_extensions = lowercase_extensions
 
     def put(
         self,
         file: BinaryIO | str,
-        extension: str | None = None,
         put_strategy: str | None = None,
         simulate: bool = False,
     ):
@@ -71,8 +65,6 @@ class EverCas(object):
 
         Args:
             file (mixed): Readable object or path to file.
-            extension (str, optional): Optional extension to append to file
-                when saving.
             put_strategy (mixed, optional): The strategy to use for adding
                 files; may be a function or the string name of one of the
                 built-in put strategies declared in :class:`PutStrategies`
@@ -97,12 +89,9 @@ class EverCas(object):
         """
         stream = Stream(file)
 
-        if extension and self.lowercase_extensions:
-            extension = extension.lower()
-
         with closing(stream):
             id = self.computehash(stream)
-            filepath = self.idpath(id, extension)
+            filepath = self.idpath(id)
 
             # Only move file if it doesn't already exist.
             if not os.path.isfile(filepath):
@@ -123,7 +112,6 @@ class EverCas(object):
     def putdir(
         self,
         root: str,
-        extensions: bool = True,
         recursive: bool = False,
         put_strategy: str | None = None,
         simulate: bool = False,
@@ -132,9 +120,6 @@ class EverCas(object):
 
         Args:
             root (str): Path to the directory to add.
-            extensions (bool, optional): Whether to add extensions when
-                saving (extension will be taken from input file). Defaults to
-                ``True``.
             recursive (bool, optional): Find files recursively in ``root``.
                 Defaults to ``False``.
             put_strategy (mixed, optional): same as :meth:`put`.
@@ -143,10 +128,7 @@ class EverCas(object):
         Yields :class:`HashAddress`es for all added files.
         """
         for file in find_files(root, recursive=recursive):
-            extension = os.path.splitext(file)[1] if extensions else None
-            address = self.put(
-                file, extension=extension, put_strategy=put_strategy, simulate=simulate
-            )
+            address = self.put(file, put_strategy=put_strategy, simulate=simulate)
             yield (file, address)
 
     def mktempfile(self, stream: Stream):
@@ -295,9 +277,7 @@ class EverCas(object):
 
     def realpath(self, file: str):
         """Attempt to determine the real path of a file id or path through
-        successive checking of candidate paths. If the real path is stored with
-        an extension, the path is considered a match if the basename matches
-        the expected file path of the id.
+        successive checking of candidate paths.
         """
 
         # Check for absolute path.
@@ -314,26 +294,17 @@ class EverCas(object):
         if os.path.isfile(filepath):
             return filepath
 
-        # Check for sharded path with any extension.
-        paths = glob.glob("{0}.*".format(filepath))
-        if paths:
-            return paths[0]
-
         # Could not determine a match.
         return None
 
-    def idpath(self, id: str, extension: str | None = ""):
-        """Build the file path for a given hash id. Optionally, append a
-        file extension.
-        """
+    def idpath(
+        self,
+        id: str,
+    ):
+        """Build the file path for a given hash id."""
         paths = self.shard(id)
 
-        if extension and not extension.startswith(os.extsep):
-            extension = os.extsep + extension
-        elif not extension:
-            extension = ""
-
-        return os.path.join(self.root, *paths) + extension
+        return os.path.join(self.root, *paths)
 
     def computehash(self, stream: Stream):
         """Compute hash of file."""
@@ -357,12 +328,12 @@ class EverCas(object):
 
         return os.path.splitext(self.relpath(path))[0].replace(os.sep, "")
 
-    def repair(self, extensions: bool = True):
+    def repair(self):
         """Repair any file locations whose content address doesn't match it's
         file path.
         """
         repaired: list[tuple[str, HashAddress]] = []
-        corrupted = tuple(self.corrupted(extensions=extensions))
+        corrupted = tuple(self.corrupted())
         oldmask = os.umask(0)
 
         try:
@@ -382,7 +353,7 @@ class EverCas(object):
 
         return repaired
 
-    def corrupted(self, extensions: bool = True):
+    def corrupted(self):
         """Return generator that yields corrupted files as ``(path, address)``
         where ``path`` is the path of the corrupted file and ``address`` is
         the :class:`HashAddress` of the expected location.
@@ -393,8 +364,7 @@ class EverCas(object):
             with closing(stream):
                 id = self.computehash(stream)
 
-            extension = os.path.splitext(path)[1] if extensions else None
-            expected_path = self.idpath(id, extension)
+            expected_path = self.idpath(id)
 
             if expected_path != path:
                 yield (
