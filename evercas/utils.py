@@ -17,10 +17,10 @@ def issubdir(subpath: str, path: str):
     return subpath.startswith(path)
 
 
-def shard(digest: str, depth: int, width: int):
+def shard(digest: str, prefix_depth: int, prefix_width: int):
     # This creates a list of `depth` number of tokens with width
     # `width` from the first part of the id plus the remainder.
     return compact(
-        [digest[i * width : width * (i + 1)] for i in range(depth)]
-        + [digest[depth * width :]]
+        [digest[i * prefix_width : prefix_width * (i + 1)] for i in range(prefix_depth)]
+        + [digest[prefix_depth * prefix_width :]]
     )

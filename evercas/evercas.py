@@ -23,10 +23,10 @@ class EverCas(object):
 
     Attributes:
         root (str): Directory path used as root of storage space.
-        depth (int, optional): Depth of subfolders to create when saving a
+        prefix_depth (int, optional): Number of prefix folder to create when saving a
             file.
-        width (int, optional): Width of each subfolder to create when saving a
-            file.
+        prefix_width (int, optional): Width of each prefix folder to create when saving
+            a file.
         fmode (int, optional): File mode permission to set when adding files to
             directory. It is strongly recommended to keep the default ``0o400`` which
             allows only owner to only read the file, thus avoiding accidental loss of
@@ -44,16 +44,16 @@ class EverCas(object):
     def __init__(
         self,
         root: str,
-        depth: int = 4,
-        width: int = 1,
+        prefix_depth: int = 1,
+        prefix_width: int = 2,
         fmode: int = 0o400,
         dmode: int = 0o700,
         put_strategy: str | None = None,
         lowercase_extensions: bool = False,
     ):
         self.root = os.path.realpath(root)
-        self.depth = depth
-        self.width = width
+        self.prefix_depth = prefix_depth
+        self.prefix_width = prefix_width
         self.fmode = fmode
         self.dmode = dmode
         self.put_strategy = PutStrategies.get(put_strategy) or PutStrategies.copy
@@ -345,7 +345,7 @@ class EverCas(object):
 
     def shard(self, id: str):
         """Shard content ID into subfolders."""
-        return shard(id, self.depth, self.width)
+        return shard(id, self.prefix_depth, self.prefix_width)
 
     def unshard(self, path: str):
         """Unshard path to determine hash value."""
