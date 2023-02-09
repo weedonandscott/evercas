@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import errno
 import glob
-import hashlib
 import io
 import os
 import shutil
@@ -13,6 +12,8 @@ from contextlib import closing
 from dataclasses import dataclass
 from tempfile import NamedTemporaryFile
 from typing import BinaryIO, Callable
+
+from blake3 import blake3
 
 from .utils import issubdir, shard
 
@@ -26,9 +27,6 @@ class EverCas(object):
             file.
         width (int, optional): Width of each subfolder to create when saving a
             file.
-        algorithm (str): Hash algorithm to use when computing file hash.
-            Algorithm should be available in ``hashlib`` module. Defaults to
-            ``'sha256'``.
         fmode (int, optional): File mode permission to set when adding files to
             directory. Defaults to ``0o664`` which allows owner/group to
             read/write and everyone else to read.
@@ -47,16 +45,15 @@ class EverCas(object):
         root: str,
         depth: int = 4,
         width: int = 1,
-        algorithm: str = "sha256",
-        fmode: int = 0o664,
-        dmode: int = 0o755,
+        # TODO: get rid of these?
+        fmode: int = 0o400,
+        dmode: int = 0o700,
         put_strategy: str | None = None,
         lowercase_extensions: bool = False,
     ):
         self.root = os.path.realpath(root)
         self.depth = depth
         self.width = width
-        self.algorithm = algorithm
         self.fmode = fmode
         self.dmode = dmode
         self.put_strategy = PutStrategies.get(put_strategy) or PutStrategies.copy
@@ -339,11 +336,12 @@ class EverCas(object):
         return os.path.join(self.root, *paths) + extension
 
     def computehash(self, stream: Stream):
-        """Compute hash of file using :attr:`algorithm`."""
-        hashobj = hashlib.new(self.algorithm)
+        """Compute hash of file."""
+        # TODO: benchmark and tweak accordingly
+        hasher = blake3(max_threads=blake3.AUTO)
         for data in stream:
-            hashobj.update(to_bytes(data))
-        return hashobj.hexdigest()
+            hasher.update(to_bytes(data))
+        return hasher.hexdigest()
 
     def shard(self, id: str):
         """Shard content ID into subfolders."""

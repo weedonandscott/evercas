@@ -8,6 +8,11 @@ requires_python = ">=3.6"
 summary = "Classes Without Boilerplate"
 
 [[package]]
+name = "blake3"
+version = "0.3.3"
+summary = "Python bindings for the Rust blake3 crate"
+
+[[package]]
 name = "bleach"
 version = "6.0.0"
 requires_python = ">=3.7"
@@ -501,12 +506,39 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:6b630f70fce64745c7ff4f41eddf029574d384e300e8788d10ee303a0c5d0ac7"
+content_hash = "sha256:e26789e875603918900a43d4c4b7a32b80e3f8c3f8da7ace0e5fc32c6b928188"
 
 [metadata.files]
 "attrs 22.2.0" = [
     {url = "https://files.pythonhosted.org/packages/21/31/3f468da74c7de4fcf9b25591e682856389b3400b4b62f201e65f15ea3e07/attrs-22.2.0.tar.gz", hash = "sha256:c9227bfc2f01993c03f68db37d1d15c9690188323c067c641f1a35ca58185f99"},
     {url = "https://files.pythonhosted.org/packages/fb/6e/6f83bf616d2becdf333a1640f1d463fef3150e2e926b7010cb0f81c95e88/attrs-22.2.0-py3-none-any.whl", hash = "sha256:29e95c7f6778868dbd49170f98f8818f78f3dc5e0e37c0b1f474e3561b240836"},
+]
+"blake3 0.3.3" = [
+    {url = "https://files.pythonhosted.org/packages/0b/e7/021c33f7693f72c1c292d5cabe0f4f9c2b4d8193aed2ad8c362fdda9d451/blake3-0.3.3-cp37-none-win32.whl", hash = "sha256:08f3122ddd4345cbcc83fa1acc8287f2dfb449d77036f73967d56b96dfc919e6"},
+    {url = "https://files.pythonhosted.org/packages/14/4a/b2f89d8a8581efcc62499dd9a3f19015539a281a5f48d42d50fc68a1efb7/blake3-0.3.3-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:a2fb9ba8edc59ad889aa8352b39ae5e254fe1a466a9031635ce38f97df78be6f"},
+    {url = "https://files.pythonhosted.org/packages/19/f4/736ef4df85365beb5716ffe972f28893c78728bcae8edab1a551b3262fbc/blake3-0.3.3-cp37-none-win_amd64.whl", hash = "sha256:89e084b0a5967bcd949a8bb75c4fe40562b59c170fe6aca92acb5de4fc4e97ca"},
+    {url = "https://files.pythonhosted.org/packages/1c/e1/d7ba90063ac69f251d301197de94c7201078c2b39fa6a719482a1d662ec1/blake3-0.3.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ccf773e9fa772d21ef60f643a6a346ea722bdc12d86453359db5f12fe7679022"},
+    {url = "https://files.pythonhosted.org/packages/2a/f4/93b8ae4190722402409ed0d46f8798bf2e0635e2cb7bfbbe976cec5e72e6/blake3-0.3.3-cp310-none-win_amd64.whl", hash = "sha256:e1724c115226c471f01d562e82f1f84c9d677b9c4ac13a0ece6c5be4928d4272"},
+    {url = "https://files.pythonhosted.org/packages/37/c2/19bd86bfcfc533e58cb003657dbff9963eb91a2570d57099e0f1ae329037/blake3-0.3.3-cp39-cp39-macosx_10_7_x86_64.whl", hash = "sha256:6293cc474af332bb3a99d93d2395a92cb7945707749eb52e7729dd85c0097275"},
+    {url = "https://files.pythonhosted.org/packages/38/ff/d797368c692a7f3f60d2520824e76287e1350c267d8a93f129f7762ccefd/blake3-0.3.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:ed2b9e4327fbe35897ddcf61b7874dd7d8de102234b86b8d6c4aff442cf3dc57"},
+    {url = "https://files.pythonhosted.org/packages/44/7e/4f039b5cfba572ee752f2c643341106a08753dcc13cf5e90f91e1740f110/blake3-0.3.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:e04a8f3046cbb450d6ba6075e085fa624d52af0a8e6abdb03f2601244c8f3fb7"},
+    {url = "https://files.pythonhosted.org/packages/47/7b/ba086536cc6de8e3ee79be9359200d60666819781e2df8a80b7f1a5f2f3e/blake3-0.3.3-cp311-none-win_amd64.whl", hash = "sha256:60b040b2cadc5308fd381fccec288b3a44e0a78d39fffa939da751c5044edb87"},
+    {url = "https://files.pythonhosted.org/packages/4b/91/3ea7fe431c322440b60d80205c985a40f01d2c6b49e8a8bfdb583dab6bdd/blake3-0.3.3-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:e3324a793c4771a77a3640c2a0512b456666c2bc43e0b8c651b8fd488fb56404"},
+    {url = "https://files.pythonhosted.org/packages/65/07/391c4e9517d30f8e26937daae828abe510b1dd7d9727b97509d5abe08acd/blake3-0.3.3-cp38-none-win32.whl", hash = "sha256:6a72458e712c511bdc0eb88de79c992977c79194806e9892f2c1b3f6902d85a2"},
+    {url = "https://files.pythonhosted.org/packages/66/65/cfe35fa4e7e8c2bdec32f2159e2161594580a7bb22456d315dbacb62255e/blake3-0.3.3-cp310-cp310-macosx_10_7_x86_64.whl", hash = "sha256:f6443ee7e80cff7936a0b68b8d9c482548a7bd29e463419a59bb3f1e67dcad35"},
+    {url = "https://files.pythonhosted.org/packages/7e/88/271fc900d7e8f091601c01412f3eafb62c62a9ce98091a24a822b4c392c1/blake3-0.3.3.tar.gz", hash = "sha256:0a78908b6299fd21dd46eb00fa4592b259ee419d586d545a3b86e1f2e4d0ee6d"},
+    {url = "https://files.pythonhosted.org/packages/7f/46/760281c63a0ac3a119834957d40b0ab45d1311d29da910c8932184243199/blake3-0.3.3-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8299a67e7c81ae28815192bc99b0eaaf02857a73e18209e3c763b16defd35ce9"},
+    {url = "https://files.pythonhosted.org/packages/7f/75/2fff3cd46b6515cd7159616cdcddd28343a0898fe04473c8d36b4a06ff3e/blake3-0.3.3-cp39-none-win32.whl", hash = "sha256:ef8865081fcbbeee3d536a62b4ba2a7b8b41d6479c88d7c6da0cd68a24ca9be2"},
+    {url = "https://files.pythonhosted.org/packages/82/ca/604c072baa71b28cb7e9b14cfa18fdb2b0a3ee2cc72f1ea16ca505a2d5d9/blake3-0.3.3-cp37-cp37m-macosx_10_7_x86_64.whl", hash = "sha256:69269ac2777ea5082e01558ebb9d7d354672414d56de3955c8dada4846192bc4"},
+    {url = "https://files.pythonhosted.org/packages/8c/28/86782d9445525c184126815a71df4c1066e8fed6d310b8be7f52b47fd808/blake3-0.3.3-cp310-none-win32.whl", hash = "sha256:97ccac1fe423d80e400f3172114fe09c430cb74442abd096592b7e4986960c55"},
+    {url = "https://files.pythonhosted.org/packages/91/b3/64233ba049467ce59229e06885a3e6a76a7a8407f81fc7e993a423c16e8d/blake3-0.3.3-cp38-cp38-macosx_10_7_x86_64.whl", hash = "sha256:f3363e23a385feb67a845a2b87a1dde6aa952bae5b34189bf9a674fbc2431565"},
+    {url = "https://files.pythonhosted.org/packages/94/90/11040c04a0000725fc192ce5bae9653f7ddcd20a80ab448d7c229b421366/blake3-0.3.3-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8265bf4846371589f471b52281c54402853e9bb95bfb160bab38ab8839734ac4"},
+    {url = "https://files.pythonhosted.org/packages/95/15/95c3dd9d443a9ed5ae3a51793cf01c00afc05c7269ed7b9ad2e371a97981/blake3-0.3.3-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6c13bf3c30f843d2de05d0a4f5f705611307bebdc4b81b33555a220e0131f103"},
+    {url = "https://files.pythonhosted.org/packages/d1/bf/a778260a43a9edcd70a11db40d24cd888001aa625fcbe8fcc37c26ac1e4e/blake3-0.3.3-cp39-none-win_amd64.whl", hash = "sha256:320c3a046d2d931a022900b9272ae4e625d1c5761740dbf4072b65401b73531d"},
+    {url = "https://files.pythonhosted.org/packages/d9/59/4322578a872ce68b5daeff6cedfe816c5ab200004396b90374b552c142f9/blake3-0.3.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:48ea05bbc964edbf1e4e9e5a4d9c2df50fa80a295c16f0cf51321eb6273d3b7d"},
+    {url = "https://files.pythonhosted.org/packages/db/09/eb7d8b3e15e750192c9b0dec19ca95c1bc3d24bd3ae173ab1cfd713521cf/blake3-0.3.3-cp38-none-win_amd64.whl", hash = "sha256:0d9d9d25fca5f65940c780693500e85db57f10b3281153af7a965dbed094546a"},
+    {url = "https://files.pythonhosted.org/packages/e9/39/6356fb8b8f7d365f08ffa5e40481effdfc4b243c69b26afa05d9d13e0072/blake3-0.3.3-cp311-cp311-macosx_10_7_x86_64.whl", hash = "sha256:7d3c62ec8aa4c3c21c72496fd0004862d8f7e1eeb69a574d0a8469d6c7f47ece"},
+    {url = "https://files.pythonhosted.org/packages/e9/c5/f618563aca9e5cc135e406cd81aa07c78770a1bce342466f7f44d844de22/blake3-0.3.3-cp311-none-win32.whl", hash = "sha256:ac8a208102c0418953a747fb794789c2cf2e7c3111db72a51bbd2fe0d236bc0a"},
 ]
 "bleach 6.0.0" = [
     {url = "https://files.pythonhosted.org/packages/7e/e6/d5f220ca638f6a25557a611860482cb6e54b2d97f0332966b1b005742e1f/bleach-6.0.0.tar.gz", hash = "sha256:1a1a85c1595e07d8db14c5f09f09e6433502c51c595970edc090551f0db99414"},

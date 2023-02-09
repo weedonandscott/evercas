@@ -20,10 +20,9 @@ Typical use cases for this kind of system are ones where:
     handlers, IO buffers, etc).
 -   Pluggable put strategies, allowing fine-grained control of how files
     are added.
--   Able to repair the root folder by reindexing all files. Useful if
-    the hashing algorithm or folder structure options change or to
+-   Able to repair the root folder by reindexing all files. Useful if folder structure options change or to
     initialize existing files.
--   Supports any hashing algorithm available via `hashlib.new`.
+-   Uses the performant `blake3` hash with multithreading enabled.
 -   Python 3.10+ compatible.
 -   Support for hard-linking files into the EverCas-managed directory on
     compatible filesystems
@@ -52,7 +51,7 @@ exist, it will be created.
 ``` python
 # Set the `depth` to the number of subfolders the file's hash should be split when saving.
 # Set the `width` to the desired width of each subfolder.
-fs = EverCas('temp_evercas', depth=4, width=1, algorithm='sha256')
+fs = EverCas('temp_evercas', depth=4, width=1)
 
 # With depth=4 and width=1, files will be saved in the following pattern:
 # temp_evercas/a/b/c/d/efghijklmnopqrstuvwxyz
@@ -60,9 +59,6 @@ fs = EverCas('temp_evercas', depth=4, width=1, algorithm='sha256')
 # With depth=3 and width=2, files will be saved in the following pattern:
 # temp_evercas/ab/cd/ef/ghijklmnopqrstuvwxyz
 ```
-
-**NOTE:** The `algorithm` value should be a valid string argument to
-`hashlib.new()`.
 
 ## Basic Usage
 
@@ -160,10 +156,9 @@ Below are some of the more advanced features of `EverCas`.
 ### Repairing Files
 
 The `EverCas` files may not always be in sync with it\'s `depth`,
-`width`, or `algorithm` settings (e.g. if `EverCas` takes ownership of a
-directory that wasn\'t previously stored using content hashes or if the
-`EverCas` settings change). These files can be easily reindexed using
-`repair()`.
+`width` (e.g. if `EverCas` takes ownership of a directory that 
+wasn\'t previously stored using content hashes or if the `EverCas` 
+settings change). These files can be easily reindexed using `repair()`.
 
 ``` python
 repaired = fs.repair()

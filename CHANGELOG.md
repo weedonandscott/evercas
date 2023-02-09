@@ -1,5 +1,9 @@
 # Changelog
 
+## Upcoming changes
+
+- Hash exclusively using `blake3`
+
 ## v0.8.1
 
 - Drop Python 2.x support, Python 3.10+ required
