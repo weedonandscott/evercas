@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.8.1
+
+- Drop Python 2.x support, Python 3.10+ required
+- Adopt PDM
+- Switch from Sphinx and RST to MkDocs and Markdown
+- Adopt black, ruff
+- Adopt Pyright and type annotations
+
+## v0.8.0
+
+- Skipped
+
 ## v0.7.2 (2019-10-24)
 
 -   Fix out-of-memory issue when computing file ID hashes of large
