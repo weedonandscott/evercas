@@ -1,6 +1,3 @@
-"""Module for EverCas class.
-"""
-
 from __future__ import annotations
 
 import errno
@@ -23,7 +20,8 @@ PathLikeArg = str | os.PathLike[str]
     Attributes:
 """
 
-class EverCas:
+
+class Store:
     """Manages CRUD actions on stored files.
 
     If a store was already initialized in `root`, its config will be loaded
@@ -191,9 +189,8 @@ class EverCas:
         pathlike: PathLikeArg,
         put_strategy: str | None = None,
         dry_run: bool = False,
-    ) -> HashAddress:
-        """Store contents of `pathlike` using its content hash for the
-        address.
+    ) -> StoreEntry:
+        """Store contents of `pathlike` using its content hash for the path.
 
         Parameters:
             pathlike: **Absolute** path to file.
@@ -201,23 +198,23 @@ class EverCas:
                 files; may be a function or the string name of one of the
                 built-in put strategies declared in `PutStrategies`
                 class. Defaults to `PutStrategies.copy`.
-            dry_run: Return the `HashAddress` of the
+            dry_run: Return the `StoreEntry` of the
                 file that would be appended but don't do anything.
 
-        Put strategies are functions `(evercas, source_path, dest_path)` where
-        `evercas` is the `EverCas` instance from which `put` was
+        Put strategies are functions `(store, source_path, dest_path)` where
+        `store` is the `Store` instance from which `put` was
         called; `source_path` is the `anyio.Path` object representing the
         data to add; and `dest_path` is the string absolute file path inside
-        the EverCas where it needs to be saved. The put strategy function should
+        the Store where it needs to be saved. The put strategy function should
         create the path `dest_path` containing the data in `source_path`.
 
         There are currently two built-in put strategies: "copy" (the default)
-        and "link". "link" attempts to hard link the file into the EverCas if
+        and "link". "link" attempts to hard link the file into the Store if
         the platform and underlying filesystem support it, and falls back to
         "copy" behavior.
 
         Returns:
-            HashAddress: File's hash address.
+            StoreEntry: File's store entry.
         """
         source_path = anyio.Path(pathlike)
 
@@ -241,7 +238,7 @@ class EverCas:
         else:
             is_duplicate = True
 
-        return HashAddress(checksum, str(self.relpath(checksum_path)), is_duplicate)
+        return StoreEntry(checksum, str(self.relpath(checksum_path)), is_duplicate)
 
     async def putdir(
         self,
@@ -249,7 +246,7 @@ class EverCas:
         recursive: bool = False,
         put_strategy: str | None = None,
         dry_run: bool = False,
-    ) -> AsyncGenerator[tuple[anyio.Path, HashAddress], None]:
+    ) -> AsyncGenerator[tuple[anyio.Path, StoreEntry], None]:
         """Put all files from a directory.
 
         Parameters:
@@ -260,11 +257,11 @@ class EverCas:
             dry_run: same as `put`.
 
         Yields:
-            HashAddress(HashAddress): For each put file
+            StoreEntry(StoreEntry): For each put file
         """
         async for file in find_files(anyio.Path(pathlike), recursive=recursive):
-            address = await self.put(file, put_strategy=put_strategy, dry_run=dry_run)
-            yield (file, address)
+            entry = await self.put(file, put_strategy=put_strategy, dry_run=dry_run)
+            yield (file, entry)
 
     async def mktempfile(self, source_file_path: anyio.Path):
         """Create a named temporary file from a `anyio.Path` object and
@@ -291,21 +288,21 @@ class EverCas:
 
         return tmp.name
 
-    def get(self, checksum: str) -> HashAddress | None:
-        """Return `HashAddress` from given checksum or path. If `file` does not
+    def get(self, checksum: str) -> StoreEntry | None:
+        """Return `StoreEntry` from given checksum or path. If `file` does not
         refer to a valid file, then `None` is returned.
 
         Parameters:
             file (str): Checksum or path of file.
 
         Returns:
-            HashAddress: File's hash address.
+            StoreEntry: File's hash entry.
         """
 
         # Check for sharded path.
         filepath = self.checksum_path(checksum)
         if filepath.is_file():
-            return HashAddress(checksum, str(self.relpath(filepath)))
+            return StoreEntry(checksum, str(self.relpath(filepath)))
 
         # Could not determine a match.
         return None
@@ -329,11 +326,11 @@ class EverCas:
         if mode not in ["rb", "r", "rt"]:
             raise ValueError(f"Forbidden mode {mode}. Only `rb`, `r`, `rt` allowed.")
 
-        address = self.get(checksum)
-        if address is None:
+        entry = self.get(checksum)
+        if entry is None:
             raise IOError(f"Could not locate checksum: {checksum}")
 
-        return self.abspath(address.path).open(mode)
+        return self.abspath(entry.path).open(mode)
 
     async def delete(self, checksum: str):
         """Delete file using checksum. Remove any empty directories after deleting.
@@ -342,11 +339,11 @@ class EverCas:
         Parameters:
             file (str): Checksum or path of file.
         """
-        address = self.get(checksum)
-        if address is None:
+        entry = self.get(checksum)
+        if entry is None:
             return None
 
-        await self.abspath(address.path).unlink(missing_ok=True)
+        await self.abspath(entry.path).unlink(missing_ok=True)
 
     async def files(self):
         """Return generator that yields all files in the `root`
@@ -455,10 +452,10 @@ class EverCas:
 
         return "".join(path.parts)
 
-    async def corrupted(self) -> AsyncGenerator[tuple[str, HashAddress], None]:
-        """Return generator that yields entries as `(corrupt_path, expected_address)`
+    async def corrupted(self) -> AsyncGenerator[tuple[str, StoreEntry], None]:
+        """Return generator that yields entries as `(corrupt_path, expected_entry)`
         where `corrupt_path` is the string path of the mis-located file and
-        `expected_address` is the `HashAddress` of the expected location.
+        `expected_entry` is the `StoreEntry` of the expected location.
         """
         async for path in self.files():
             checksum = await self.compute_checksum(path)
@@ -468,7 +465,7 @@ class EverCas:
             if expected_path != path:
                 yield (
                     str(path),
-                    HashAddress(checksum, str(self.relpath(expected_path))),
+                    StoreEntry(checksum, str(self.relpath(expected_path))),
                 )
 
     def __contains__(self, file: str) -> bool:
@@ -502,15 +499,15 @@ def to_bytes(text: bytes | str):
 
 
 @dataclass
-class HashAddress:
+class StoreEntry:
     """File address containing file's path on disk and it's content checksum.
 
     Attributes:
         checksum (str): Hexdigest of file contents.
-        path (str): Relative path location to `EverCas.root`.
-        is_duplicate (boolean, optional): Whether the hash address created was
-            a duplicate of a previously existing file. Can only be `True`
-            after a put operation. Defaults to `False`.
+        path (str): Relative path location to `Store.root`.
+        is_duplicate (boolean, optional): Whether the newly returned StoreEntry
+        represents a duplicate of an existing file. Can only be `True` after
+        a put operation. Defaults to `False`.
     """
 
     checksum: str
@@ -528,7 +525,7 @@ class PutStrategies:
     @classmethod
     def get(
         cls, method: str | None
-    ) -> Callable[[EverCas, anyio.Path, anyio.Path], None] | None:
+    ) -> Callable[[Store, anyio.Path, anyio.Path], None] | None:
         """Look up a strategy by name string. You can also pass a function
         which will be returned as is."""
         if method:
@@ -540,29 +537,27 @@ class PutStrategies:
                 return getattr(cls, method)
 
     @staticmethod
-    async def copy(
-        evercas: EverCas, src_path: anyio.Path, dest_path: anyio.Path
-    ) -> None:
+    async def copy(store: Store, src_path: anyio.Path, dest_path: anyio.Path) -> None:
         """The default copy put strategy, writes the file object to a
         temporary file on disk and then moves it into place."""
-        tmp_path = await evercas.mktempfile(src_path)
+        tmp_path = await store.mktempfile(src_path)
         shutil.move(tmp_path, dest_path)
 
     @classmethod
     async def link(
-        cls, evercas: EverCas, src_path: anyio.Path, dest_path: anyio.Path
+        cls, store: Store, src_path: anyio.Path, dest_path: anyio.Path
     ) -> None:
         """Use os.link if available to create a hard link to the original
-        file if the EverCas and the original file reside on the same
+        file if the store and the original file reside on the same
         filesystem and the filesystem supports hard links."""
 
         if not hasattr(os, "link"):
-            return await cls.copy(evercas, src_path, dest_path)
+            return await cls.copy(store, src_path, dest_path)
 
         # No path available because e.g. a StringIO was used
         if not src_path:
             # Just copy
-            return await cls.copy(evercas, src_path, dest_path)
+            return await cls.copy(store, src_path, dest_path)
 
         try:
             # Try to create the hard link
@@ -577,8 +572,8 @@ class PutStrategies:
             # will be raised again when we try to copy)
             if e.errno not in (errno.EMLINK, errno.EXDEV, errno.EPERM):
                 raise
-            return await cls.copy(evercas, src_path, dest_path)
+            return await cls.copy(store, src_path, dest_path)
         else:
             # After creating the hard link, make sure it has the correct
             # file permissions
-            os.chmod(dest_path, evercas.fmode)
+            os.chmod(dest_path, store.fmode)

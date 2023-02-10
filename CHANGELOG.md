@@ -2,11 +2,13 @@
 
 ## Upcoming changes
 
+- BREAKING: `EverCas` class renamed to `Store`
+- BREAKING: `HashAddress` class renamed to `StoreEntry`
 - BREAKING: Hash exclusively using `blake3`
 - BREAKING: Change default 'fmode', 'dmode' values
 - BREAKING: Rename 'depth', 'width' to 'prefix_depth', 'prefix_width' and change their defaults
 - BREAKING: Remove extension preservation on stored blobs
-- BREAKING: Only store relative path in `HashAddress`
+- BREAKING: Only store relative path in `StoreEntry`
 - BREAKING: replace own `Stream` class with `anyio.Path`. Many of the methods are now `async`
 - BREAKING: expand use of `anyio.Path` to other class members. More of the methods are `async`, notably:
     - The self iterator is now async
