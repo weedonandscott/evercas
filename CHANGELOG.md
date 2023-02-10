@@ -9,17 +9,19 @@
 - BREAKING: Rename 'depth', 'width' to 'prefix_depth', 'prefix_width' and change their defaults
 - BREAKING: Remove extension preservation on stored blobs
 - BREAKING: Only store relative path in `StoreEntry`
-- BREAKING: replace own `Stream` class with `anyio.Path`. Many of the methods are now `async`
-- BREAKING: expand use of `anyio.Path` to other class members. More of the methods are `async`, notably:
+- BREAKING: Replace own `Stream` class with `anyio.Path`. Many of the methods are now `async`
+- BREAKING: Expand use of `anyio.Path` to other class members. More of the methods are `async`, notably:
     - The self iterator is now async
     - `count()` is async, and so `__len__` has been removed
-- BREAKING: since many operations are now async, store-wide actions are considered unsafe and
+- BREAKING: Since many operations are now async, store-wide actions are considered unsafe and
   are removed until a locking cleanup mechanism will be implemented. Affected methods are:
     - `remove_empty()`
     - `repair()`
   To reduce the chances of having a corrupt store, EverCas now implements an init state that
   persists store config and will only execute actions on an existing store based on it.
-- BREAKING: remove `Store.files()` and `Store.directories()` in favor of `Store.get_all()`
+- BREAKING: Remove `Store.files()` and `Store.directories()` in favor of `Store.get_all()`
+- BREAKING: Simplify path operations. Removed: `haspath()`, `makepath()`, `relpath()`, `abspath()`, `shard()`. Rename `checksum_path()` to `checksum_to_path()`, `unshard()` to `path_to_checksum()`.
+- BREAKING: `StoreEntry` now validates paths are relative.
 - Some minor internal refactoring
 
 ## v0.8.1

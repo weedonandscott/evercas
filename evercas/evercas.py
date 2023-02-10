@@ -222,13 +222,14 @@ class Store:
             raise ValueError("`pathlike` to put must be absolute")
 
         checksum = await self.compute_checksum(source_path)
-        checksum_path = self.checksum_path(checksum)
+        checksum_path = self.checksum_to_path(checksum)
 
         # Only move file if it doesn't already exist.
-        if not os.path.isfile(checksum_path):
+        if not checksum_path.is_file():
             is_duplicate = False
             if not dry_run:
-                self.makepath(os.path.dirname(checksum_path))
+                if not checksum_path.parent.is_dir():
+                    await checksum_path.parent.mkdir(parents=True)
                 put_strategy_callable = (
                     PutStrategies.get(put_strategy)
                     or self._put_strategy
@@ -238,7 +239,12 @@ class Store:
         else:
             is_duplicate = True
 
-        return StoreEntry(checksum, str(self.relpath(checksum_path)), is_duplicate)
+        entry = self.get(checksum)
+
+        if entry is None:
+            raise RuntimeError("Unknown error occurred")
+
+        return StoreEntry(entry.checksum, entry.path, is_duplicate)
 
     async def putdir(
         self,
@@ -300,9 +306,9 @@ class Store:
         """
 
         # Check for sharded path.
-        filepath = self.checksum_path(checksum)
+        filepath = self.checksum_to_path(checksum)
         if filepath.is_file():
-            return StoreEntry(checksum, str(self.relpath(filepath)))
+            return StoreEntry(checksum, str(filepath))
 
         # Could not determine a match.
         return None
@@ -313,8 +319,8 @@ class Store:
         Yields:
             entry (StoreEntry):
         """
-        async for async_path in find_files(self._root, recursive=True):
-            entry = self.get(self.unshard(async_path.relative_to(self._root)))
+        async for file in find_files(self._root, recursive=True):
+            entry = self.get(self.path_to_checksum(file))
             if entry is not None:
                 yield entry
 
@@ -341,7 +347,7 @@ class Store:
         if entry is None:
             raise IOError(f"Could not locate checksum: {checksum}")
 
-        return self.abspath(entry.path).open(mode)
+        return self._root.joinpath(entry.path).open(mode)
 
     async def delete(self, checksum: str):
         """Delete file using checksum. Remove any empty directories after deleting.
@@ -354,7 +360,7 @@ class Store:
         if entry is None:
             return None
 
-        await self.abspath(entry.path).unlink(missing_ok=True)
+        await self._root.joinpath(entry.path).unlink(missing_ok=True)
 
     async def count(self) -> int:
         """Return count of the number of files in the `root` directory."""
@@ -377,36 +383,6 @@ class Store:
     def exists(self, checksum: str) -> bool:
         """Check whether a given file checksum exists on disk."""
         return self.get(checksum) is not None
-
-    def haspath(self, pathlike: PathLikeArg) -> bool:
-        """Return whether `pathlike` is a subdirectory of the `root`
-        directory.
-        """
-        return self._root in anyio.Path(pathlike).parents
-
-    def makepath(self, path: str) -> None:
-        """Physically create the folder path on disk."""
-        try:
-            os.makedirs(path, self._dmode)
-        except FileExistsError:
-            assert os.path.isdir(path), "expected {} to be a directory".format(path)
-
-    def relpath(self, path: anyio.Path) -> anyio.Path:
-        """Return `path` relative to the `root` directory."""
-        return path.relative_to(self._root)
-
-    def abspath(self, path: str) -> anyio.Path:
-        """Return absolute version of `path` in `root` directory."""
-        return self._root.joinpath(path)
-
-    def checksum_path(
-        self,
-        checksum: str,
-    ) -> anyio.Path:
-        """Build the file path for a given checksum."""
-        paths = self.shard(checksum)
-
-        return self._root.joinpath(*paths)
 
     async def compute_checksum(self, file: anyio.Path) -> str:
         """Compute checksum of file."""
@@ -434,16 +410,23 @@ class Store:
 
         return hasher.hexdigest()
 
-    def shard(self, checksum: str) -> list[str]:
-        """Shard checksum into subfolders."""
-        return shard(checksum, self._prefix_depth, self._prefix_width)
+    def checksum_to_path(
+        self,
+        checksum: str,
+    ) -> anyio.Path:
+        """Build the file path for a given checksum."""
+        path_parts = shard(checksum, self._prefix_depth, self._prefix_width)
+        return anyio.Path("").joinpath(*path_parts)
 
-    def unshard(self, path: anyio.Path) -> str:
+    def path_to_checksum(self, path: anyio.Path) -> str:
         """Unshard path to determine checksum."""
-        if not self.haspath(path):
+        if path.is_absolute():
+            raise ValueError(f"Path {path} must be relative to store root")
+
+        if not self._root.joinpath(path).is_file():
             raise ValueError(
-                f"Cannot unshard path. The path {path} is not "
-                f"a subdirectory of the root directory {self._root}"
+                f"Cannot unshard path. The path {path}"
+                f"is not a file contained in the store"
             )
 
         return "".join(path.parts)
@@ -467,12 +450,12 @@ class Store:
             else:
                 checksum = await self.compute_checksum(anyio.Path(entry.path))
 
-            expected_path = self.checksum_path(checksum)
+            expected_path = self.checksum_to_path(checksum)
 
             if expected_path != entry.path:
                 yield (
                     entry.path,
-                    StoreEntry(checksum, str(self.relpath(expected_path))),
+                    StoreEntry(checksum, str(expected_path)),
                 )
 
     def __contains__(self, file: str) -> bool:
@@ -486,29 +469,36 @@ class Store:
         return self.get_all()
 
 
-
-
 def to_bytes(text: bytes | str):
     if not isinstance(text, bytes):
         text = bytes(text, "utf8")
     return text
 
 
-@dataclass
+@dataclass(frozen=True)
 class StoreEntry:
     """File address containing file's path on disk and it's content checksum.
 
     Attributes:
-        checksum (str): Hexdigest of file contents.
-        path (str): Relative path location to `Store.root`.
-        is_duplicate (boolean, optional): Whether the newly returned StoreEntry
-        represents a duplicate of an existing file. Can only be `True` after
-        a put operation. Defaults to `False`.
+        checksum: Hexdigest of file contents.
+        path: File path **relative** to `Store.root`.
+        is_duplicate: Whether the newly returned StoreEntry represents a duplicate
+        of an existing file. Can only be `True` after a put operation.
     """
 
+    def set_path(self, path: str):
+        if pathlib.Path(path).is_absolute():
+            raise ValueError("Entry path must be relative to its store's root")
+        self.__dict__["path"] = path
+
+    def get_path(self) -> str:
+        return str(self.__dict__.get("path"))
+
     checksum: str
-    path: str
+    path: str = property(get_path, set_path)  # type: ignore
     is_duplicate: bool = False
+
+    del set_path, get_path
 
 
 class PutStrategies:
