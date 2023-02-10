@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import errno
+import json
 import os
 import pathlib
 import shutil
@@ -18,74 +19,197 @@ from .utils import shard
 
 PathLikeArg = str | os.PathLike[str]
 
+"""
+    Attributes:
+"""
 
-class EverCas(object):
-    """Content addressable file manager.
+class EverCas:
+    """Manages CRUD actions on stored files.
+
+    If a store was already initialized in `root`, its config will be loaded
+    from a file that was saved on init.
+
+    Otherwise, a call to `init()` is required to initialize the store.
 
     Attributes:
-        root (str | os.PathLike[str]): Directory path used as root of storage space.
-        prefix_depth (int, optional): Number of prefix folder to create when saving a
-            file.
-        prefix_width (int, optional): Width of each prefix folder to create when saving
-            a file.
-        fmode (int, optional): File mode permission to set when adding files to
-            directory. It is strongly recommended to keep the default ``0o400`` which
-            allows only owner to only read the file, thus avoiding accidental loss of
-            data (e.g ``echo oops > file``)
-        dmode (int, optional): Directory mode permission to set for
-            subdirectories. Defaults to ``0o700`` which allows owner read, write and
-            execute.
-        put_strategy (mixed, optional): Default ``put_strategy`` for
-            :meth:`put` method. See :meth:`put` for more information. Defaults
-            to :attr:`PutStrategies.copy`.
+        root: Directory path used as root of storage space
+        is_initialized: Whether `root` points to an initialized store
+        prefix_depth: Count of subdirectories file is hosted in,
+        prefix_width: Length of each subdirectory name as taken from the file checksum,
+        fmode: store File permissions,
+        dmode: store Directory permissions,
+        put_strategy: Selected `put_strategy`
+
+    Parameters:
+        root: **Absolute** directory path used as root of storage space
     """
 
     def __init__(
         self,
         root: PathLikeArg,
+    ):
+        sync_root = pathlib.Path(root)
+        if not sync_root.is_absolute():
+            raise ValueError("Store root must be an absolute path")
+        sync_root = sync_root.resolve()
+        self._root = anyio.Path(sync_root)
+
+        self._is_initialized = False
+
+        try:
+            self._import_config()
+            self._is_initialized = True
+        except FileNotFoundError:
+            # config not found is fine, user will need to init a new store
+            pass
+
+    def init(
+        self,
         prefix_depth: int = 1,
         prefix_width: int = 2,
         fmode: int = 0o400,
         dmode: int = 0o700,
         put_strategy: str | None = None,
-    ):
-        # use `pathlib` for the sync `resolve()`
-        temp_path = pathlib.Path(root)
-        if not self.root.is_absolute():
-            raise ValueError("Store root must be an absolute path")
-        temp_path = temp_path.resolve()
-        self.root = anyio.Path(temp_path)
+    ) -> None:
+        """Initialize a new repository in `root`, which must either be an empty
+        or non-existent directory.
 
-        self.prefix_depth = prefix_depth
-        self.prefix_width = prefix_width
-        self.fmode = fmode
-        self.dmode = dmode
-        self.put_strategy = PutStrategies.get(put_strategy) or PutStrategies.copy
+        Parameters:
+            prefix_depth: Number of prefix folder to create when saving a
+                file.
+            prefix_width: Width of each prefix folder to create when saving
+                a file.
+            fmode: File mode permission to set when adding files to
+                directory. It is strongly recommended to keep the default `0o400`
+                which allows only owner to only read the file, thus avoiding accidental
+                loss of data (e.g `echo oops > file`)
+            dmode: Directory mode permission to set for
+                subdirectories. Defaults to `0o700` which allows owner read, write and
+                execute.
+            put_strategy: Default `put_strategy` for
+                `put` method. See `put` for more information. Defaults
+                to `PutStrategies.copy`.
+        """
+        sync_root = pathlib.Path(self._root)
+        for _ in sync_root.iterdir():
+            raise FileExistsError(
+                "Store directory must be empty for new repo initialization"
+            )
+
+        if not sync_root.is_dir():
+            sync_root.mkdir(parents=True)
+
+        self._set_config(
+            prefix_depth=prefix_depth,
+            prefix_width=prefix_width,
+            fmode=fmode,
+            dmode=dmode,
+            put_strategy=put_strategy,
+        )
+
+        self._is_initialized = True
+
+    @property
+    def root(self) -> str:
+        return str(self.root)
+
+    @property
+    def is_initialized(self) -> bool:
+        return self._is_initialized
+
+    @property
+    def _config_file(self) -> pathlib.Path:
+        # initialization is sync
+        return pathlib.Path(self._root.joinpath(".evercas_conf.json"))
+
+    def _import_config(self) -> None:
+        if not self._config_file.is_file():
+            raise FileNotFoundError("No config file found")
+
+        config = json.loads(self._config_file.read_text())
+        self._set_config(
+            prefix_depth=config["prefix_depth"],
+            prefix_width=config["prefix_width"],
+            fmode=config["fmode"],
+            dmode=config["dmode"],
+            put_strategy=config["put_strategy"],
+        )
+
+    @property
+    def prefix_depth(self) -> int:
+        return self._prefix_depth
+
+    @property
+    def prefix_width(self) -> int:
+        return self._prefix_width
+
+    @property
+    def fmode(self) -> int:
+        return self._fmode
+
+    @property
+    def dmode(self) -> int:
+        return self._dmode
+
+    @property
+    def put_strategy(self):
+        return self._put_strategy
+
+    def _set_config(
+        self,
+        prefix_depth: int,
+        prefix_width: int,
+        fmode: int,
+        dmode: int,
+        put_strategy: str | None,
+    ) -> None:
+        if self._config_file.exists():
+            raise FileExistsError("Overwriting existing config may cause loss of data")
+
+        if not self._root.is_dir():
+            raise FileNotFoundError(f"Store root directory not found at {self._root}")
+
+        self._prefix_depth = prefix_depth
+        self._prefix_width = prefix_width
+        self._fmode = fmode
+        self._dmode = dmode
+        self._put_strategy = PutStrategies.get(put_strategy) or PutStrategies.copy
+
+        json_config = json.dumps(
+            {
+                "prefix_depth": self._prefix_depth,
+                "prefix_width": self._prefix_width,
+                "fmode": self._fmode,
+                "dmode": self._dmode,
+                "put_strategy": self._put_strategy,
+            }
+        )
+        self._config_file.write_text(json_config)
 
     async def put(
         self,
-        file: PathLikeArg,
+        pathlike: PathLikeArg,
         put_strategy: str | None = None,
         dry_run: bool = False,
     ) -> HashAddress:
-        """Store contents of `file` on disk using its content hash for the
+        """Store contents of `pathlike` using its content hash for the
         address.
 
-        Args:
-            file (mixed): Readable object or path to file.
-            put_strategy (mixed, optional): The strategy to use for adding
+        Parameters:
+            pathlike: **Absolute** path to file.
+            put_strategy: The strategy to use for adding
                 files; may be a function or the string name of one of the
-                built-in put strategies declared in :class:`PutStrategies`
-                class. Defaults to :attr:`PutStrategies.copy`.
-            dry_run (bool, optional): Return the :class:`HashAddress` of the
+                built-in put strategies declared in `PutStrategies`
+                class. Defaults to `PutStrategies.copy`.
+            dry_run: Return the `HashAddress` of the
                 file that would be appended but don't do anything.
 
-        Put strategies are functions ``(evercas, source_path, dest_path)`` where
-        ``evercas`` is the :class:`EverCas` instance from which :meth:`put` was
-        called; ``path`` is the :class:`anyio.Path` object representing the
-        data to add; and ``dest_path`` is the string absolute file path inside
+        Put strategies are functions `(evercas, source_path, dest_path)` where
+        `evercas` is the `EverCas` instance from which `put` was
+        called; `source_path` is the `anyio.Path` object representing the
+        data to add; and `dest_path` is the string absolute file path inside
         the EverCas where it needs to be saved. The put strategy function should
-        create the path ``dest_path`` containing the data in ``source_path``.
+        create the path `dest_path` containing the data in `source_path`.
 
         There are currently two built-in put strategies: "copy" (the default)
         and "link". "link" attempts to hard link the file into the EverCas if
@@ -95,7 +219,10 @@ class EverCas(object):
         Returns:
             HashAddress: File's hash address.
         """
-        source_path = anyio.Path(file)
+        source_path = anyio.Path(pathlike)
+
+        if not source_path.is_absolute():
+            raise ValueError("`pathlike` to put must be absolute")
 
         checksum = await self.compute_checksum(source_path)
         checksum_path = self.checksum_path(checksum)
@@ -107,7 +234,7 @@ class EverCas(object):
                 self.makepath(os.path.dirname(checksum_path))
                 put_strategy_callable = (
                     PutStrategies.get(put_strategy)
-                    or self.put_strategy
+                    or self._put_strategy
                     or PutStrategies.copy
                 )
                 put_strategy_callable(self, source_path, checksum_path)
@@ -118,28 +245,29 @@ class EverCas(object):
 
     async def putdir(
         self,
-        root: PathLikeArg,
+        pathlike: PathLikeArg,
         recursive: bool = False,
         put_strategy: str | None = None,
         dry_run: bool = False,
     ) -> AsyncGenerator[tuple[anyio.Path, HashAddress], None]:
         """Put all files from a directory.
 
-        Args:
-            root (str): Path to the directory to add.
-            recursive (bool, optional): Find files recursively in ``root``.
-                Defaults to ``False``.
-            put_strategy (mixed, optional): same as :meth:`put`.
-            dry_run (boo, optional): same as :meth:`put`.
+        Parameters:
+            root: Path to the directory to add.
+            recursive: Find files recursively in `root`.
+                Defaults to `False`.
+            put_strategy: same as `put`.
+            dry_run: same as `put`.
 
-        Yields :class:`HashAddress`es for all added files.
+        Yields:
+            HashAddress(HashAddress): For each put file
         """
-        async for file in find_files(anyio.Path(root), recursive=recursive):
+        async for file in find_files(anyio.Path(pathlike), recursive=recursive):
             address = await self.put(file, put_strategy=put_strategy, dry_run=dry_run)
             yield (file, address)
 
     async def mktempfile(self, source_file_path: anyio.Path):
-        """Create a named temporary file from a :class:`anyio.Path` object and
+        """Create a named temporary file from a `anyio.Path` object and
         return its filename.
         """
         tmp = NamedTemporaryFile(delete=False)
@@ -147,7 +275,7 @@ class EverCas(object):
         oldmask = os.umask(0)
 
         try:
-            os.chmod(tmp.name, self.fmode)
+            os.chmod(tmp.name, self._fmode)
         finally:
             os.umask(oldmask)
 
@@ -164,10 +292,10 @@ class EverCas(object):
         return tmp.name
 
     def get(self, checksum: str) -> HashAddress | None:
-        """Return :class:`HashAddress` from given checksum or path. If `file` does not
-        refer to a valid file, then ``None`` is returned.
+        """Return `HashAddress` from given checksum or path. If `file` does not
+        refer to a valid file, then `None` is returned.
 
-        Args:
+        Parameters:
             file (str): Checksum or path of file.
 
         Returns:
@@ -188,11 +316,11 @@ class EverCas(object):
         """Return open buffer object from given checksum.
         Only `rb`, `r`, `rt` modes allowed.
 
-        Args:
+        Parameters:
             checksum (str): Checksum of file.
 
         Returns:
-            Buffer: An ``io`` buffer dependent on the `mode`.
+            Buffer: An `io` buffer dependent on the `mode`.
 
         Raises:
             IOError: If file doesn't exist.
@@ -211,7 +339,7 @@ class EverCas(object):
         """Delete file using checksum. Remove any empty directories after deleting.
         No exception is raised if file doesn't exist.
 
-        Args:
+        Parameters:
             file (str): Checksum or path of file.
         """
         address = self.get(checksum)
@@ -220,58 +348,30 @@ class EverCas(object):
 
         await self.abspath(address.path).unlink(missing_ok=True)
 
-        await self.remove_empty(anyio.Path(address.path))
-
-    async def remove_empty(self, subpath: anyio.Path) -> None:
-        """Successively remove all empty folders starting with `subpath` and
-        proceeding "up" through directory tree until reaching the :attr:`root`
-        folder.
-        """
-        # Don't attempt to remove any folders if subpath is not a
-        # subdirectory of the root directory.
-        if not self.haspath(subpath):
-            return
-
-        normalized_path = await subpath.resolve()
-
-        is_dir = await normalized_path.is_dir()
-        is_symlink = await normalized_path.is_symlink()
-
-        if not is_dir or is_symlink:
-            return
-
-        async for _ in normalized_path.iterdir():
-            # `subpath` not empty
-            return
-
-        parent = normalized_path.parent
-        await normalized_path.rmdir()
-        await self.remove_empty(parent)
-
     async def files(self):
-        """Return generator that yields all files in the :attr:`root`
+        """Return generator that yields all files in the `root`
         directory.
         """
-        async for async_path in find_files(self.root, recursive=True):
+        async for async_path in find_files(self._root, recursive=True):
             yield async_path
 
     def folders(self):
-        """Return generator that yields all folders in the :attr:`root`
+        """Return generator that yields all folders in the `root`
         directory that contain files.
         """
-        for folder, _, files in os.walk(self.root):
+        for folder, _, files in os.walk(self._root):
             if files:
                 yield folder
 
     async def count(self):
-        """Return count of the number of files in the :attr:`root` directory."""
+        """Return count of the number of files in the `root` directory."""
         count = 0
         async for _ in self:
             count += 1
         return count
 
     async def size(self):
-        """Return the total size in bytes of all files in the :attr:`root`
+        """Return the total size in bytes of all files in the `root`
         directory.
         """
         total = 0
@@ -286,25 +386,25 @@ class EverCas(object):
         return self.get(checksum) is not None
 
     def haspath(self, pathlike: PathLikeArg):
-        """Return whether `pathlike` is a subdirectory of the :attr:`root`
+        """Return whether `pathlike` is a subdirectory of the `root`
         directory.
         """
-        return self.root in anyio.Path(pathlike).parents
+        return self._root in anyio.Path(pathlike).parents
 
     def makepath(self, path: str):
         """Physically create the folder path on disk."""
         try:
-            os.makedirs(path, self.dmode)
+            os.makedirs(path, self._dmode)
         except FileExistsError:
             assert os.path.isdir(path), "expected {} to be a directory".format(path)
 
     def relpath(self, path: anyio.Path) -> anyio.Path:
-        """Return `path` relative to the :attr:`root` directory."""
-        return path.relative_to(self.root)
+        """Return `path` relative to the `root` directory."""
+        return path.relative_to(self._root)
 
     def abspath(self, path: str) -> anyio.Path:
-        """Return absolute version of `path` in :attr:`root` directory."""
-        return self.root.joinpath(path)
+        """Return absolute version of `path` in `root` directory."""
+        return self._root.joinpath(path)
 
     def checksum_path(
         self,
@@ -313,7 +413,7 @@ class EverCas(object):
         """Build the file path for a given checksum."""
         paths = self.shard(checksum)
 
-        return self.root.joinpath(*paths)
+        return self._root.joinpath(*paths)
 
     async def compute_checksum(self, file: anyio.Path):
         """Compute checksum of file."""
@@ -343,47 +443,22 @@ class EverCas(object):
 
     def shard(self, checksum: str) -> list[str]:
         """Shard checksum into subfolders."""
-        return shard(checksum, self.prefix_depth, self.prefix_width)
+        return shard(checksum, self._prefix_depth, self._prefix_width)
 
     def unshard(self, path: anyio.Path) -> str:
         """Unshard path to determine checksum."""
         if not self.haspath(path):
             raise ValueError(
                 f"Cannot unshard path. The path {path} is not "
-                f"a subdirectory of the root directory {self.root}"
+                f"a subdirectory of the root directory {self._root}"
             )
 
         return "".join(path.parts)
 
-    async def repair(self) -> list[tuple[str, HashAddress]]:
-        """Repair any file locations whose content address doesn't match it's
-        file path.
-        """
-        repaired: list[tuple[str, HashAddress]] = []
-        oldmask = os.umask(0)
-
-        try:
-            async for corrupt_path, expected_address in self.corrupted():
-                expected_abspath = self.abspath(expected_address.path)
-                if os.path.isfile(expected_abspath):
-                    # File already exists so just delete corrupted path.
-                    os.remove(corrupt_path)
-                else:
-                    # File doesn't exists so move it.
-                    self.makepath(os.path.dirname(expected_abspath))
-                    shutil.move(corrupt_path, expected_abspath)
-
-                os.chmod(expected_abspath, self.fmode)
-                repaired.append((str(corrupt_path), expected_address))
-        finally:
-            os.umask(oldmask)
-
-        return repaired
-
-    async def corrupted(self) -> AsyncGenerator[tuple[anyio.Path, HashAddress], None]:
-        """Return generator that yields corrupted files as ``(path, address)``
-        where ``path`` is the path of the corrupted file and ``address`` is
-        the :class:`HashAddress` of the expected location.
+    async def corrupted(self) -> AsyncGenerator[tuple[str, HashAddress], None]:
+        """Return generator that yields entries as `(corrupt_path, expected_address)`
+        where `corrupt_path` is the string path of the mis-located file and
+        `expected_address` is the `HashAddress` of the expected location.
         """
         async for path in self.files():
             checksum = await self.compute_checksum(path)
@@ -392,18 +467,18 @@ class EverCas(object):
 
             if expected_path != path:
                 yield (
-                    path,
+                    str(path),
                     HashAddress(checksum, str(self.relpath(expected_path))),
                 )
 
     def __contains__(self, file: str) -> bool:
         """Return whether a given file checksum or path is contained in the
-        :attr:`root` directory.
+        `root` directory.
         """
         return self.exists(file)
 
     def __aiter__(self) -> AsyncGenerator[anyio.Path, None]:
-        """Iterate over all files in the :attr:`root` directory."""
+        """Iterate over all files in the `root` directory."""
         return self.files()
 
 
@@ -432,10 +507,10 @@ class HashAddress:
 
     Attributes:
         checksum (str): Hexdigest of file contents.
-        path (str): Relative path location to :attr:`EverCas.root`.
+        path (str): Relative path location to `EverCas.root`.
         is_duplicate (boolean, optional): Whether the hash address created was
-            a duplicate of a previously existing file. Can only be ``True``
-            after a put operation. Defaults to ``False``.
+            a duplicate of a previously existing file. Can only be `True`
+            after a put operation. Defaults to `False`.
     """
 
     checksum: str
@@ -446,7 +521,7 @@ class HashAddress:
 class PutStrategies:
     """Namespace for built-in put strategies.
 
-    Should not be instantiated. Use the :meth:`get` static method to look up a
+    Should not be instantiated. Use the `get` static method to look up a
     strategy by name, or directly reference one of the included class methods.
     """
 

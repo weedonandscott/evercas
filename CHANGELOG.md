@@ -11,6 +11,12 @@
 - BREAKING: expand use of `anyio.Path` to other class members. More of the methods are `async`, notably:
     - The self iterator is now async
     - `count()` is async, and so `__len__` has been removed
+- BREAKING: since many operations are now async, store-wide actions are considered unsafe and
+  are removed until a locking cleanup mechanism will be implemented. Affected methods are:
+    - `remove_empty()`
+    - `repair()`
+  To reduce the chances of having a corrupt store, EverCas now implements an init state that
+  persists store config and will only execute actions on an existing store based on it.
 - Some minor internal refactoring
 
 ## v0.8.1
