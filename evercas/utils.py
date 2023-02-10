@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from typing import Any
+from typing import Any, AsyncGenerator
+
+import anyio
 
 
 def compact(items: list[Any]):
@@ -21,3 +23,16 @@ def shard(checksum: str, prefix_depth: int, prefix_width: int) -> list[str]:
         ]
         + [checksum[prefix_depth * prefix_width :]]
     )
+
+
+async def find_files(
+    path: anyio.Path, recursive: bool = False
+) -> AsyncGenerator[anyio.Path, None]:
+    if recursive:
+        async for sub_path in path.glob("**"):
+            if sub_path.is_file():
+                yield sub_path
+    else:
+        async for sub_path in path.iterdir():
+            if sub_path.is_file():
+                yield sub_path

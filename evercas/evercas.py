@@ -12,7 +12,7 @@ from typing import AsyncGenerator, Callable, Literal
 import anyio
 from blake3 import blake3
 
-from .utils import shard
+from .utils import find_files, shard
 
 PathLikeArg = str | os.PathLike[str]
 
@@ -307,6 +307,17 @@ class Store:
         # Could not determine a match.
         return None
 
+    async def get_all(self) -> AsyncGenerator[StoreEntry, None]:
+        """Return async generator that yields all store entries
+
+        Yields:
+            entry (StoreEntry):
+        """
+        async for async_path in find_files(self._root, recursive=True):
+            entry = self.get(self.unshard(async_path.relative_to(self._root)))
+            if entry is not None:
+                yield entry
+
     def open(
         self, checksum: str, mode: Literal["rb"] | Literal["r"] | Literal["rt"] = "rb"
     ):
@@ -345,50 +356,35 @@ class Store:
 
         await self.abspath(entry.path).unlink(missing_ok=True)
 
-    async def files(self):
-        """Return generator that yields all files in the `root`
-        directory.
-        """
-        async for async_path in find_files(self._root, recursive=True):
-            yield async_path
-
-    def folders(self):
-        """Return generator that yields all folders in the `root`
-        directory that contain files.
-        """
-        for folder, _, files in os.walk(self._root):
-            if files:
-                yield folder
-
-    async def count(self):
+    async def count(self) -> int:
         """Return count of the number of files in the `root` directory."""
         count = 0
-        async for _ in self:
+        async for _ in self.get_all():
             count += 1
         return count
 
-    async def size(self):
+    async def size(self) -> int:
         """Return the total size in bytes of all files in the `root`
         directory.
         """
         total = 0
 
-        async for path in self.files():
-            total += (await path.stat()).st_size
+        async for entry in self.get_all():
+            total += (await self._root.joinpath(entry.path).stat()).st_size
 
         return total
 
-    def exists(self, checksum: str):
+    def exists(self, checksum: str) -> bool:
         """Check whether a given file checksum exists on disk."""
         return self.get(checksum) is not None
 
-    def haspath(self, pathlike: PathLikeArg):
+    def haspath(self, pathlike: PathLikeArg) -> bool:
         """Return whether `pathlike` is a subdirectory of the `root`
         directory.
         """
         return self._root in anyio.Path(pathlike).parents
 
-    def makepath(self, path: str):
+    def makepath(self, path: str) -> None:
         """Physically create the folder path on disk."""
         try:
             os.makedirs(path, self._dmode)
@@ -412,7 +408,7 @@ class Store:
 
         return self._root.joinpath(*paths)
 
-    async def compute_checksum(self, file: anyio.Path):
+    async def compute_checksum(self, file: anyio.Path) -> str:
         """Compute checksum of file."""
 
         file_stat = await file.stat()
@@ -452,19 +448,30 @@ class Store:
 
         return "".join(path.parts)
 
-    async def corrupted(self) -> AsyncGenerator[tuple[str, StoreEntry], None]:
+    async def corrupted(
+        self, trust_file_path: bool = False
+    ) -> AsyncGenerator[tuple[str, StoreEntry], None]:
         """Return generator that yields entries as `(corrupt_path, expected_entry)`
         where `corrupt_path` is the string path of the mis-located file and
         `expected_entry` is the `StoreEntry` of the expected location.
+
+        Parameters:
+            trust_file_path: If `True`, gets checksum for each file by un-sharding
+            the file's path in the store. If `False`, computes the checksum from
+            file content.
         """
-        async for path in self.files():
-            checksum = await self.compute_checksum(path)
+        async for entry in self.get_all():
+
+            if trust_file_path:
+                checksum = entry.checksum
+            else:
+                checksum = await self.compute_checksum(anyio.Path(entry.path))
 
             expected_path = self.checksum_path(checksum)
 
-            if expected_path != path:
+            if expected_path != entry.path:
                 yield (
-                    str(path),
+                    entry.path,
                     StoreEntry(checksum, str(self.relpath(expected_path))),
                 )
 
@@ -474,20 +481,9 @@ class Store:
         """
         return self.exists(file)
 
-    def __aiter__(self) -> AsyncGenerator[anyio.Path, None]:
-        """Iterate over all files in the `root` directory."""
-        return self.files()
-
-
-async def find_files(path: anyio.Path, recursive: bool = False):
-    if recursive:
-        async for sub_path in path.glob("**"):
-            if sub_path.is_file():
-                yield sub_path
-    else:
-        async for sub_path in path.iterdir():
-            if sub_path.is_file():
-                yield sub_path
+    def __aiter__(self) -> AsyncGenerator[StoreEntry, None]:
+        """Iterate over all entries in the store."""
+        return self.get_all()
 
 
 

@@ -19,6 +19,7 @@
     - `repair()`
   To reduce the chances of having a corrupt store, EverCas now implements an init state that
   persists store config and will only execute actions on an existing store based on it.
+- BREAKING: remove `Store.files()` and `Store.directories()` in favor of `Store.get_all()`
 - Some minor internal refactoring
 
 ## v0.8.1
