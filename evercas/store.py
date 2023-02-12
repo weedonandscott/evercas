@@ -107,6 +107,10 @@ class Store:
             default_checkout_strategy: Default `CheckoutStrategy` for `checkout()`.
 
         """
+        # Hex encoded Blake3 is 64 characters long
+        if 64 <= prefix_depth * prefix_width:
+            raise ValueError("prefix_depth * prefix_width must be less than 64")
+
         sync_root = pathlib.Path(self._root)
         sync_root.mkdir(parents=True, exist_ok=True)
 
