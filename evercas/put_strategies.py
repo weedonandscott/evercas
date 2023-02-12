@@ -50,6 +50,7 @@ class PutStrategiesRunner:
     individual strategies for their specific considerations.
 
         Args:
+            store_root: Path to the store's root
             checksummer: Function that checksums a file
             dest_path_builder: Function that builds a destination path based
                 on the checksum
@@ -63,12 +64,14 @@ class PutStrategiesRunner:
 
     def __init__(
         self,
+        store_root: anyio.Path,
         checksummer: Checksummer,
         dest_path_builder: PathBuilder,
         scratch_dir: anyio.Path,
         fmode: int,
         dmode: int,
     ) -> None:
+        self._store_root = store_root
         self._checksummer = checksummer
         self._dest_path_builder = dest_path_builder
         self._scratch_dir = scratch_dir
@@ -81,19 +84,20 @@ class PutStrategiesRunner:
         source_path: anyio.Path,
         progress_callback: ProgressCallback | None = None,
     ):
+        path_in_root = self._store_root.joinpath(source_path)
 
-        if not source_path.is_file():
+        if not path_in_root.is_file():
             raise ValueError("{source_path} must be a file")
 
         # Ruff doesn't support match
         # https://github.com/charliermarsh/ruff/issues/282
         match put_strategy:  # noqa: E999
             case PutStrategy.EARLY_ATOMIC_RENAME:
-                return self.early_atomic_rename(source_path, progress_callback)
+                return self.early_atomic_rename(path_in_root, progress_callback)
             case PutStrategy.LATE_ATOMIC_RENAME:
-                return self.late_atomic_rename(source_path, progress_callback)
+                return self.late_atomic_rename(path_in_root, progress_callback)
             case PutStrategy.COPY:
-                return self.copy(source_path, progress_callback)
+                return self.copy(path_in_root, progress_callback)
 
     async def early_atomic_rename(
         self,
@@ -139,7 +143,7 @@ class PutStrategiesRunner:
         os.rename(scratch_path, dest_path)
         os.chmod(dest_path, self._fmode)
 
-        return StoreEntry(checksum, str(dest_path), is_duplicate)
+        return StoreEntry(checksum, str(dest_path), str(self._store_root), is_duplicate)
 
     async def late_atomic_rename(
         self,
@@ -185,7 +189,7 @@ class PutStrategiesRunner:
         os.rename(source_path, dest_path)
         os.chmod(dest_path, self._fmode)
 
-        return StoreEntry(checksum, str(dest_path), is_duplicate)
+        return StoreEntry(checksum, str(dest_path), str(self._store_root), is_duplicate)
 
     async def copy(
         self,
@@ -213,7 +217,7 @@ class PutStrategiesRunner:
         scratch_path = self._scratch_dir.joinpath(f"{uuid4().hex}_{source_path.name}")
 
         async_reader = ProgressAsyncFileReader(
-            TeeAsyncFileReader(source_path, destination_path=scratch_path),
+            TeeAsyncFileReader(source_path, dest_path=scratch_path),
             progress_callback,
         )
 
@@ -231,4 +235,4 @@ class PutStrategiesRunner:
         os.rename(scratch_path, dest_path)
         os.chmod(dest_path, self._fmode)
 
-        return StoreEntry(checksum, str(dest_path), is_duplicate)
+        return StoreEntry(checksum, str(dest_path), str(self._store_root), is_duplicate)

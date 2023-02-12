@@ -77,11 +77,9 @@ class AsyncFileReader:
 
 
 class TeeAsyncFileReader(AsyncFileReader):
-    def __init__(
-        self, source: anyio.Path | AsyncFileReader, destination_path: anyio.Path
-    ):
+    def __init__(self, source: anyio.Path | AsyncFileReader, dest_path: anyio.Path):
         super().__init__(source)
-        self._destination_path = destination_path
+        self._destination_path = dest_path
 
     @property
     def destination_path(self) -> anyio.Path:

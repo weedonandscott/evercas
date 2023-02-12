@@ -170,8 +170,28 @@ from evercas.put_strategies import PutStrategy
 # copy a file instead of moving
 new_entry = await store.put("file/path", put_strategy=PutStrategy.COPY)
 
-# this can be set on store init
+# default can be set on store init
 store.init(default_put_strategy=PutStrategy.COPY)
+
+```
+
+### Check out files
+
+The retrieve data from the store and put it in an external directory, use `checkout`:
+
+``` python
+from evercas.checkout_strategies import CheckoutStrategy
+
+entry_to_checkout = store.get(checksum_of_stored_file)
+
+# using a symlink for read only access
+await store.checkout(entry_to_checkout, "destination/path", checkout_strategy=CheckoutStrategy.SYMBOLIC_LINK)
+
+# using a copy strategy
+await store.checkout(entry_to_checkout, "destination/path", checkout_strategy=CheckoutStrategy.COPY)
+
+# default can be set on store init
+store.init(default_checkout_strategy=CheckoutStrategy.COPY)
 
 ```
 

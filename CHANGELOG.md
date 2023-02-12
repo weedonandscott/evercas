@@ -27,6 +27,8 @@
 - BREAKING, NEW: Hash exclusively using `blake3`
 - BREAKING, NEW: Overhaul `PutStrategies` and extract to own module, please review docs.
 
+- NEW: Add checkout functionality
+
 - Some minor internal refactoring
 
 ## v0.8.1

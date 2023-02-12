@@ -8,6 +8,7 @@ from typing import AsyncGenerator, Literal
 import anyio
 from blake3 import blake3
 
+from evercas.checkout_strategies import CheckoutStrategiesRunner, CheckoutStrategy
 from evercas.put_strategies import PutStrategiesRunner, PutStrategy
 from evercas.store_entry import StoreEntry
 
@@ -46,7 +47,9 @@ class Store:
         fmode: store File permissions,
         dmode: store Directory permissions,
         default_put_strategy: Default
-            [`PutStrategy`][evercas.put_strategies.PutStrategiesRunner] to use.
+          [`PutStrategy`][evercas.put_strategies.PutStrategiesRunner] to use.
+        default_checkout_strategy: Default
+          [`PutStrategy`][evercas.checkout_strategies.CheckoutStrategiesRunner] to use.
 
     Parameters:
         root: **Absolute** directory path used as root of storage space
@@ -75,6 +78,7 @@ class Store:
         fmode: int = 0o400,
         dmode: int = 0o700,
         default_put_strategy: PutStrategy = PutStrategy.EARLY_ATOMIC_RENAME,
+        default_checkout_strategy: CheckoutStrategy = CheckoutStrategy.SYMBOLIC_LINK,
     ) -> None:
         """Initialize a new repository in `root`, which must either be an empty
         or non-existent directory.
@@ -97,10 +101,11 @@ class Store:
                 subdirectories. Defaults to `0o700` which allows owner read, write and
                 execute.
             default_put_strategy: Default `PutStrategy` for `put()` and `put_dir()`.
+                See documentation for
+                [`PutStrategiesRunner`][evercas.put_strategies.PutStrategiesRunner] for
+                the various options.
+            default_checkout_strategy: Default `CheckoutStrategy` for `checkout()`.
 
-            See documentation for
-            [`PutStrategiesRunner`][evercas.put_strategies.PutStrategiesRunner] for the
-            various options.
         """
         sync_root = pathlib.Path(self._root)
         sync_root.mkdir(parents=True, exist_ok=True)
@@ -118,6 +123,7 @@ class Store:
             fmode=fmode,
             dmode=dmode,
             default_put_strategy=default_put_strategy,
+            default_checkout_strategy=default_checkout_strategy,
         )
 
         self._is_initialized = True
@@ -152,6 +158,7 @@ class Store:
             fmode=config["fmode"],
             dmode=config["dmode"],
             default_put_strategy=config["default_put_strategy"],
+            default_checkout_strategy=config["default_checkout_strategy"],
         )
 
     @property
@@ -181,6 +188,7 @@ class Store:
         fmode: int,
         dmode: int,
         default_put_strategy: PutStrategy,
+        default_checkout_strategy: CheckoutStrategy,
     ) -> None:
         if self._config_file.exists():
             raise FileExistsError("Overwriting existing config may cause loss of data")
@@ -193,11 +201,19 @@ class Store:
         self._fmode = fmode
         self._dmode = dmode
         self._default_put_strategy = default_put_strategy
+        self._default_checkout_strategy = default_checkout_strategy
 
-        self._put_strategy_runner = PutStrategiesRunner(
+        self._put_strategies_runner = PutStrategiesRunner(
+            self._root,
             self.compute_checksum,
             self._checksum_to_path,
             self._scratch_path,
+            self._fmode,
+            self._dmode,
+        )
+
+        self._checkout_strategies_runner = CheckoutStrategiesRunner(
+            self.compute_checksum,
             self._fmode,
             self._dmode,
         )
@@ -209,6 +225,7 @@ class Store:
                 "fmode": self._fmode,
                 "dmode": self._dmode,
                 "default_put_strategy": self._default_put_strategy,
+                "default_checkout_strategy": self._default_checkout_strategy,
             }
         )
         self._config_file.write_text(json_config)
@@ -253,9 +270,11 @@ class Store:
                 )
             )
             checksum_path = self._checksum_to_path(checksum)
-            return StoreEntry(checksum, str(checksum_path), self.exists(checksum))
+            return StoreEntry(
+                checksum, str(checksum_path), self.root, self.exists(checksum)
+            )
 
-        created_entry = await self._put_strategy_runner.run(
+        created_entry = await self._put_strategies_runner.run(
             put_strategy or self._default_put_strategy,
             source_path,
             progress_callback,
@@ -308,6 +327,46 @@ class Store:
                 dry_run=dry_run,
             )
             yield (str(source_file), entry)
+
+    async def checkout(
+        self,
+        source_entry: StoreEntry,
+        pathlike: PathLikeArg,
+        progress_callback: ProgressCallback | None = None,
+        checkout_strategy: CheckoutStrategy | None = None,
+        dry_run: bool = False,
+    ) -> str | None:
+        """Check out `source_entry` to `pathlike`
+
+        Parameters:
+            dest_path: **Absolute** path to destination.
+            progress_callback: optional callback to receive `put` progress
+            checkout_strategy: The strategy to use for checking out the file.
+                If `None`, uses store's default strategy. See the
+                [`CheckoutStrategy`][evercas.checkout_strategies.CheckoutStrategiesRunner]
+                class for the available options.
+            dry_run: Return the checksum (or `None` if irrelevant) of the file that
+            would have been checked out without checking it out.
+
+        Returns:
+            checksum: Checksum of checked-out file or `None` if irrelevant (such with
+            the case of symbolic links).
+
+        """
+        dest_path = anyio.Path(pathlike)
+
+        if not dest_path.is_absolute():
+            raise ValueError("`pathlike` to put must be absolute")
+
+        created_entry = await self._checkout_strategies_runner.run(
+            checkout_strategy or self._default_checkout_strategy,
+            source_entry,
+            dest_path,
+            progress_callback,
+            dry_run,
+        )
+
+        return created_entry
 
     def get(self, checksum: str) -> StoreEntry | None:
         """Return `StoreEntry` from given checksum or path. If `file` does not
