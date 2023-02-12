@@ -32,7 +32,7 @@ class Store:
     If a store was already initialized in `root`, its config will be loaded
     from a file that was saved on init.
 
-    Otherwise, a call to [`init()`][evercas.evercas.Store.init] is required to
+    Otherwise, a call to [`init()`][evercas.store.Store.init] is required to
     initialize the store.
 
     Unless otherwise indicated, `EverCas` APIs ***DON'T*** handle exceptions that may
@@ -496,6 +496,3 @@ class Store:
     def __aiter__(self) -> AsyncGenerator[StoreEntry, None]:
         """Iterate over all entries in the store."""
         return self.get_all()
-
-
-

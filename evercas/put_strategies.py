@@ -43,7 +43,7 @@ class PutStrategiesRunner:
 
     A put strategy is responsible for getting a source file from its original location
     to inside the store, located under in a checksum-dependant location computed by
-    the using [`Store`][evercas.evercas.Store].
+    the using [`Store`][evercas.store.Store].
 
     Different strategies have different advantages and disadvantages pertaining both to
     user experience and to the integrity of the data in the store. Read the docs of the
