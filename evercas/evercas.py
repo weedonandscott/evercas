@@ -11,7 +11,7 @@ from blake3 import blake3
 from evercas.put_strategies import PutStrategiesRunner, PutStrategy
 from evercas.store_entry import StoreEntry
 
-from .utils import (
+from ._utils import (
     AsyncFileReader,
     ProgressAsyncFileReader,
     ProgressCallback,

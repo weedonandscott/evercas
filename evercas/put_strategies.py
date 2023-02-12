@@ -8,7 +8,7 @@ from uuid import uuid4
 import anyio
 
 from evercas.store_entry import StoreEntry
-from .utils import (
+from ._utils import (
     AsyncFileReader,
     ProgressAsyncFileReader,
     ProgressCallback,
