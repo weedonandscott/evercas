@@ -1,3 +1,5 @@
 # API Reference
 
-::: evercas.evercas
+::: evercas.store
+::: evercas.put_strategies
+::: evercas.checkout_strategies

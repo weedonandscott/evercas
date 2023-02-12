@@ -10,6 +10,6 @@ Typical use cases for this kind of system are ones where:
 - File metadata is stored elsewhere (e.g. in a database).
 """
 
-from .evercas import EverCas, HashAddress
+from .evercas import Store, StoreEntry
 
-__all__ = ("EverCas", "HashAddress")
+__all__ = ("Store", "StoreEntry")

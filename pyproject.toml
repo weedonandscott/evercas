@@ -5,7 +5,10 @@ description = "Cloneable (with rclone) content-addressable storage for Python"
 authors = [
     {name = "Weedon & Scott Studios", email = "Studios@WeedonAndScott.com"},
 ]
-dependencies = []
+dependencies = [
+    "blake3==0.3.3",
+    "anyio==3.6.2",
+]
 requires-python = ">=3.10"
 readme = "README.md"
 license = {text = "MIT"}

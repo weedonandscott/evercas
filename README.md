@@ -18,15 +18,9 @@ Typical use cases for this kind of system are ones where:
     on the first `n` number of characters.
 -   Can save files from local file paths or readable objects (open file
     handlers, IO buffers, etc).
--   Pluggable put strategies, allowing fine-grained control of how files
-    are added.
--   Able to repair the root folder by reindexing all files. Useful if
-    the hashing algorithm or folder structure options change or to
-    initialize existing files.
--   Supports any hashing algorithm available via `hashlib.new`.
+-   Uses the performant `blake3` hash with multithreading enabled.
 -   Python 3.10+ compatible.
--   Support for hard-linking files into the EverCas-managed directory on
-    compatible filesystems
+-   Support various put strategies to insert file into the store, each with a different trade-off
 
 ## Links
 
@@ -50,90 +44,59 @@ Designate a root folder for `EverCas`. If the folder doesn\'t already
 exist, it will be created.
 
 ``` python
-# Set the `depth` to the number of subfolders the file's hash should be split when saving.
-# Set the `width` to the desired width of each subfolder.
-fs = EverCas('temp_evercas', depth=4, width=1, algorithm='sha256')
 
-# With depth=4 and width=1, files will be saved in the following pattern:
-# temp_evercas/a/b/c/d/efghijklmnopqrstuvwxyz
+store = Store('/absolute/path/to/store/root')
 
-# With depth=3 and width=2, files will be saved in the following pattern:
-# temp_evercas/ab/cd/ef/ghijklmnopqrstuvwxyz
+# if this store was created before, all done!
+
+# otherwise, initialize it:
+store.init()
+
+# if you want to check if a store is initialized, use `is_initialized`:
+store.is_initialized # True
 ```
-
-**NOTE:** The `algorithm` value should be a valid string argument to
-`hashlib.new()`.
 
 ## Basic Usage
 
-`EverCas` supports basic file storage, retrieval, and removal as well as
-some more advanced features like file repair.
+`EverCas` supports basic file storage, retrieval, and removal.
 
 ### Storing Content
 
-Add content to the folder using either readable objects (e.g.
-`StringIO`) or file paths (e.g. `'a/path/to/some/file'`).
+Add content to the store using its absolute path.
 
 ``` python
-from io import StringIO
+# Put a single file
+entry = await store.put("/some/absolute/path/to/a/file")
 
-some_content = StringIO('some content')
+# Put all files in a directory tree
+#  recursively with recursive = True 
+async for src_path, entry in store.putdir("dir"):
+    # The hexdigest of the file's contents
+    entry.checksum
 
-address = fs.put(some_content)
+    # The path relative to store.root.
+    entry.path
 
-# Or if you'd like to save the file with an extension...
-address = fs.put(some_content, '.txt')
-
-# Put all files in a directory
-for srcpath, address in fs.putdir("dir"):
-    #...
-
-# Put all files in a directory tree recursively
-for srcpath, address in fs.putdir("dir", recursive=True):
-    #...
-
-# Put all files in a directory tree using same extensions
-for srcpath, address in fs.putdir("dir", extensions=True):
-    # address.abspath will have same file extension as srcpath
-
-# The id of the file (i.e. the hexdigest of its contents).
-address.id
-
-# The absolute path where the file was saved.
-address.abspath
-
-# The path relative to fs.root.
-address.relpath
-
-# Whether the file previously existed.
-address.is_duplicate
+    # Whether the file previously existed.
+    entry.is_duplicate
 ```
 
 ### Retrieving File Address
 
-Get a file\'s `HashAddress` by address ID or path. This address would be
+Get a file\'s `StoreEntry` by checksum. This entry would be
 identical to the address returned by `put()`.
 
 ``` python
-assert fs.get(address.id) == address
-assert fs.get(address.relpath) == address
-assert fs.get(address.abspath) == address
-assert fs.get('invalid') is None
+assert store.get(address.checksum) == entry
+assert store.get('invalid') is None
 ```
 
 ### Retrieving Content
 
-Get a `BufferedReader` handler for an existing file by address ID or
-path.
+Get a `BufferedReader` handler for an existing file by checksum
 
 ``` python
-fileio = fs.open(address.id)
-
-# Or using the full path...
-fileio = fs.open(address.abspath)
-
-# Or using a path relative to fs.root
-fileio = fs.open(address.relpath)
+fileio = store.open(entry.checksum)
 ```
 
 **NOTE:** When getting a file that was saved with an extension, it\'s
@@ -145,9 +108,7 @@ looking for a file based on the ID or path.
 Delete a file by address ID or path.
 
 ``` python
-fs.delete(address.id)
-fs.delete(address.abspath)
-fs.delete(address.relpath)
+await store.delete(entry.checksum)
 ```
 
 **NOTE:** When a file is deleted, any parent directories above the file
@@ -157,31 +118,13 @@ will also be deleted if they are empty directories.
 
 Below are some of the more advanced features of `EverCas`.
 
-### Repairing Files
-
-The `EverCas` files may not always be in sync with it\'s `depth`,
-`width`, or `algorithm` settings (e.g. if `EverCas` takes ownership of a
-directory that wasn\'t previously stored using content hashes or if the
-`EverCas` settings change). These files can be easily reindexed using
-`repair()`.
-
-``` python
-repaired = fs.repair()
-
-# Or if you want to drop file extensions...
-repaired = fs.repair(extensions=False)
-```
-
-**WARNING:** It\'s recommended that a backup of the directory be made
-before repairing just in case something goes wrong.
-
 ### Walking Corrupted Files
 
-Instead of actually repairing the files, you can iterate over them for
-custom processing.
+If you ever want to migrate a `Store` to a new config, files would not be in sync
+with the new `depth` and `width` can be iterated over for custom processing.
 
 ``` python
-for corrupted_path, expected_address in fs.corrupted():
+async for corrupted_path, expected_entry in store.corrupted():
     # do something
 ```
 
@@ -193,19 +136,11 @@ modifying the file system while iterating could have unexpected results.
 Iterate over files.
 
 ``` python
-for file in fs.files():
+for file in store.files():
     # do something
 
 # Or using the class' iter method...
 for file in fs:
-    # do something
-```
-
-Iterate over folders that contain files (i.e. ignore the nested
-subfolders that only contain folders).
-
-``` python
-for folder in fs.folders():
     # do something
 ```
 
@@ -214,70 +149,50 @@ for folder in fs.folders():
 Compute the size in bytes of all files in the `root` directory.
 
 ``` python
-total_bytes = fs.size()
+total_bytes = await store.size()
 ```
 
 Count the total number of files.
 
 ``` python
-total_files = fs.count()
-
-# Or via len()...
-total_files = len(fs)
+total_files = await store.count()
 ```
 
-### Hard-linking files
+### Using different put strategies
 
-You can use the built-in \"link\" put strategy to hard-link files into
-the EverCas directory if the platform and filesystem support it. This
-will automatically and silently fall back to copying if a hard-link
-can\'t be made, e.g. because the source is on a different device, the
-EverCas directory is on a filesystem that does not support hard links or
-the source file already has the operating system\'s maximum allowed
-number of hard links to it.
+EverCas supports different put strategies, each with its own pros and cons, for inserting
+files into the store. A put strategy can be either set as a default when initializing
+the store, or on a per-file basis when using `put`.
 
 ``` python
-newpath = fs.put("file/path", put_strategy="link").abspath
-assert os.path.samefile("file/path", newpath)
+from evercas.put_strategies import PutStrategy
+
+# copy a file instead of moving
+new_entry = await store.put("file/path", put_strategy=PutStrategy.COPY)
+
+# default can be set on store init
+store.init(default_put_strategy=PutStrategy.COPY)
+
 ```
 
-### Custom Put Strategy
+### Check out files
 
-Fine-grained control over how each file or file-like object is stored in
-the underlying filesytem.
+The retrieve data from the store and put it in an external directory, use `checkout`:
 
 ``` python
-# Implement your own put strategy
-def my_put_strategy(evercas, src_stream, dst_path):
-    # src_stream is the source data to insert
-    # it is a EverCas.Stream object, which is a Python file-like object
-    # Stream objects also expose the filesystem path of the underlying
-    # file via the src_stream.name property
+from evercas.checkout_strategies import CheckoutStrategy
 
-    # dst_path is the path generated by EverCas, based on the hash of the
-    # source data
+entry_to_checkout = store.get(checksum_of_stored_file)
 
-    # src_stream.name will be None if there is not an underlying file path
-    # available (e.g. a StringIO was passed or some other non-file
-    # file-like)
-    # Its recommended to check name property is available before using
-    if src_stream.name:
-        # Example: rename files instead of copying
-        # (be careful with underlying file paths, make sure to test your
-        # implementation before using it).
-        os.rename(src_stream.name, dst_path)
-        # You can also access properties and methods of the EverCas instance
-        # using the evercas parameter
-        os.chmod(dst_path, EverCas.fmode)
-    else:
-        # The default put strategy is available for use as
-        # PutStrategies.copy
-        # You can manually call other strategies if you want fallbacks
-        # (recommended)
-        PutStrategies.copy(EverCas, src_stream, dst_path)
+# using a symlink for read only access
+await store.checkout(entry_to_checkout, "destination/path", checkout_strategy=CheckoutStrategy.SYMBOLIC_LINK)
 
-# And use it like:
-fs.put("myfile", put_strategy=my_put_strategy)
+# using a copy strategy
+await store.checkout(entry_to_checkout, "destination/path", checkout_strategy=CheckoutStrategy.COPY)
+
+# default can be set on store init
+store.init(default_checkout_strategy=CheckoutStrategy.COPY)
+
 ```
 
 For more details, please see the full documentation at

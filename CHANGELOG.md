@@ -1,8 +1,42 @@
 # Changelog
 
+## Upcoming changes
+
+- BREAKING: `EverCas` class renamed to `Store`
+- BREAKING: `HashAddress` class renamed to `StoreEntry`, extracted to its own module
+- BREAKING: Change default 'fmode', 'dmode' values
+- BREAKING: Rename 'depth', 'width' to 'prefix_depth', 'prefix_width' and change their defaults
+- BREAKING: Remove extension preservation on stored blobs
+- BREAKING: Only store relative path in `StoreEntry`
+- BREAKING: Replace own `Stream` class with `anyio.Path`. Many of the methods are now `async`
+- BREAKING: Expand use of `anyio.Path` to other class members. More of the methods are `async`, notably:
+    - The self iterator is now async
+    - `count()` is async, and so `__len__` has been removed
+- BREAKING: Since many operations are now async, store-wide actions are considered unsafe and
+  are removed until a locking cleanup mechanism will be implemented. Affected methods are:
+    - `remove_empty()`
+    - `repair()`
+  To reduce the chances of having an incompatible store, EverCas now implements an init state 
+  that persists store config and will only execute actions on an existing store based on it.
+- BREAKING: Remove `Store.files()` and `Store.directories()` in favor of `Store.get_all()`
+- BREAKING: Simplify path operations. Removed: `haspath()`, `makepath()`, `relpath()`, `abspath()`, `shard()`.
+  Rename `checksum_path()` to `checksum_to_path()`, `unshard()` to `path_to_checksum()`.
+- BREAKING: `StoreEntry` now validates that paths are relative.
+- BREAKING: Privatize the `checksum_to_path()` and `path_to_checksum()` methods
+
+- BREAKING, NEW: Hash exclusively using `blake3`
+- BREAKING, NEW: Overhaul `PutStrategies` and extract to own module, please review docs.
+
+- NEW: Add checkout functionality
+
+- Some minor internal refactoring
+
 ## v0.8.1
 
-- Drop Python 2.x support, Python 3.10+ required
+- Merge @x11x changes
+    - Put strategies
+    - Recursive directory put
+- BREAKING: Drop Python 2.x support, Python 3.10+ required
 - Adopt PDM
 - Switch from Sphinx and RST to MkDocs and Markdown
 - Adopt black, ruff
