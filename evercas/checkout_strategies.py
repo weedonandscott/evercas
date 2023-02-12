@@ -66,11 +66,11 @@ class CheckoutStrategiesRunner:
 
         Args:
             checkout_strategy: The checkout strategy to use
-            source_path: Path to file in store
+            source_entry: Path to file in store
             dest_path: Location of the symlink
             progress_callback: Callback to receive progress
             dry_run: If `True`, returns checked-out file checksum (or `None` if
-            irrelevant) without checking it out
+                irrelevant) without checking it out
 
         Returns:
             checksum: Checksum of the checked-out version, or `None` if irrelevant
@@ -172,7 +172,7 @@ class CheckoutStrategiesRunner:
             dest_path: Location of the copied file
             progress_callback: Callback to receive progress
             dry_run: If `True`, returns the checksum of the would-be copy without
-            actually copying it
+                actually copying it
 
         Returns:
             checksum: Checksum of the checked-out version

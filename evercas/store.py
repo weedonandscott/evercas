@@ -24,6 +24,7 @@ PathLikeArg = str | os.PathLike[str]
 
 """
     Attributes:
+        PathLikeArg: type for str-like path
 """
 
 
@@ -47,9 +48,9 @@ class Store:
         fmode: store File permissions,
         dmode: store Directory permissions,
         default_put_strategy: Default
-          [`PutStrategy`][evercas.put_strategies.PutStrategiesRunner] to use.
+            [`PutStrategy`][evercas.put_strategies.PutStrategiesRunner].
         default_checkout_strategy: Default
-          [`PutStrategy`][evercas.checkout_strategies.CheckoutStrategiesRunner] to use.
+            [`PutStrategy`][evercas.checkout_strategies.CheckoutStrategiesRunner].
 
     Parameters:
         root: **Absolute** directory path used as root of storage space
@@ -301,17 +302,21 @@ class Store:
     ) -> AsyncGenerator[tuple[str, StoreEntry], None]:
         """Put all files from a directory.
 
+        Danger: Dangerous: Changing Directory While `put_dir` is ongoing
+            This method uses a generator to traverse the directory. Changing its
+            contents may yield unexpected results.
+
         Warning: Important information about PutStrategy
             The selected [`PutStrategy`][evercas.put_strategies.PutStrategiesRunner] has
             a significant effect on the user experience and resulting data integrity.
             Take you time choosing and considering the different trade-offs.
 
         Parameters:
-            root: Path to the directory to add.
+            pathlike: Path to the directory to add.
             recursive: Find files recursively in `root`.
                 Defaults to `False`.
             progress_callback: optional callback to receive `put` progress. Called
-            separately for each file.
+                separately for each file.
             put_strategy: The strategy to use for putting the files into the store.
                 If `None`, uses store's default strategy.
                 See the [`PutStrategy`][evercas.put_strategies.PutStrategiesRunner]
@@ -343,14 +348,15 @@ class Store:
         """Check out `source_entry` to `pathlike`
 
         Parameters:
-            dest_path: **Absolute** path to destination.
+            source_entry: entry to check out,
+            pathlike: **Absolute** path to destination.
             progress_callback: optional callback to receive `put` progress
             checkout_strategy: The strategy to use for checking out the file.
                 If `None`, uses store's default strategy. See the
                 [`CheckoutStrategy`][evercas.checkout_strategies.CheckoutStrategiesRunner]
                 class for the available options.
             dry_run: Return the checksum (or `None` if irrelevant) of the file that
-            would have been checked out without checking it out.
+                would have been checked out without checking it out.
 
         Returns:
             checksum: Checksum of checked-out file or `None` if irrelevant (such with
@@ -377,7 +383,7 @@ class Store:
         refer to a valid file, then `None` is returned.
 
         Parameters:
-            file (str): Checksum or path of file.
+            checksum: Checksum of the stored file.
 
         Returns:
             StoreEntry: File's hash entry.
@@ -394,6 +400,10 @@ class Store:
     async def get_all(self) -> AsyncGenerator[StoreEntry, None]:
         """Return async generator that yields all store entries
 
+        Danger: Note: Unreliable if working on store in parallel
+            This method uses a generator to traverse the store. Changing its
+            contents may yield unexpected results.
+
         Yields:
             entry (StoreEntry):
         """
@@ -403,16 +413,18 @@ class Store:
                 yield entry
 
     def open(
-        self, checksum: str, mode: Literal["rb"] | Literal["r"] | Literal["rt"] = "rb"
+        self,
+        entry: StoreEntry | str,
+        mode: Literal["rb"] | Literal["r"] | Literal["rt"] = "rb",
     ):
         """Return open buffer object from given checksum.
         Only `rb`, `r`, `rt` modes allowed.
 
         Parameters:
-            checksum (str): Checksum of file.
+            entry: StoreEntry or checksum to open
 
         Returns:
-            Buffer: An `io` buffer dependent on the `mode`.
+            file(Awaitable[AsyncFile[bytes]]): An open file dependent on the `mode`.
 
         Raises:
             IOError: If file doesn't exist.
@@ -421,24 +433,32 @@ class Store:
         if mode not in ["rb", "r", "rt"]:
             raise ValueError(f"Forbidden mode {mode}. Only `rb`, `r`, `rt` allowed.")
 
-        entry = self.get(checksum)
-        if entry is None:
-            raise IOError(f"Could not locate checksum: {checksum}")
+        if isinstance(entry, str):
+            actual_entry = self.get(entry)
+
+            if actual_entry is None:
+                raise FileNotFoundError(f"Entry {entry} not found")
+
+            entry = actual_entry
 
         return self._root.joinpath(entry.path).open(mode)
 
-    async def delete(self, checksum: str):
+    async def delete(self, entry: str | StoreEntry):
         """Delete file using checksum. Remove any empty directories after deleting.
         No exception is raised if file doesn't exist.
 
         Parameters:
-            file (str): Checksum or path of file.
+            entry: StoreEntry or checksum to delete
         """
-        entry = self.get(checksum)
-        if entry is None:
+
+        actual_entry = entry
+        if isinstance(actual_entry, str):
+            actual_entry = self.get(actual_entry)
+
+        if actual_entry is None:
             return None
 
-        await self._root.joinpath(entry.path).unlink(missing_ok=True)
+        await self._root.joinpath(actual_entry.path).unlink(missing_ok=True)
 
     async def count(self) -> int:
         """Return count of the number of files in the `root` directory."""
@@ -458,9 +478,19 @@ class Store:
 
         return total
 
-    def exists(self, checksum: str) -> bool:
-        """Check whether a given file checksum exists on disk."""
-        return self.get(checksum) is not None
+    def exists(self, entry: str | StoreEntry) -> bool:
+        """Check whether a given file checksum exists on disk.
+
+        Args:
+            entry: StoreEntry or checksum to check for
+
+        """
+
+        actual_entry = entry
+        if isinstance(actual_entry, str):
+            actual_entry = self.get(actual_entry)
+
+        return actual_entry is not None
 
     async def compute_checksum(
         self, file: AsyncFileReader | PathLikeArg | anyio.Path
@@ -530,8 +560,8 @@ class Store:
 
         Parameters:
             trust_file_path: If `True`, gets checksum for each file by un-sharding
-            the file's path in the store. If `False`, computes the checksum from
-            file content.
+                the file's path in the store. If `False`, computes the checksum from
+                file content.
         """
         async for entry in self.get_all():
 
