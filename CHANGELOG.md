@@ -3,8 +3,7 @@
 ## Upcoming changes
 
 - BREAKING: `EverCas` class renamed to `Store`
-- BREAKING: `HashAddress` class renamed to `StoreEntry`
-- BREAKING: Hash exclusively using `blake3`
+- BREAKING: `HashAddress` class renamed to `StoreEntry`, extracted to its own module
 - BREAKING: Change default 'fmode', 'dmode' values
 - BREAKING: Rename 'depth', 'width' to 'prefix_depth', 'prefix_width' and change their defaults
 - BREAKING: Remove extension preservation on stored blobs
@@ -17,11 +16,17 @@
   are removed until a locking cleanup mechanism will be implemented. Affected methods are:
     - `remove_empty()`
     - `repair()`
-  To reduce the chances of having a corrupt store, EverCas now implements an init state that
-  persists store config and will only execute actions on an existing store based on it.
+  To reduce the chances of having an incompatible store, EverCas now implements an init state 
+  that persists store config and will only execute actions on an existing store based on it.
 - BREAKING: Remove `Store.files()` and `Store.directories()` in favor of `Store.get_all()`
-- BREAKING: Simplify path operations. Removed: `haspath()`, `makepath()`, `relpath()`, `abspath()`, `shard()`. Rename `checksum_path()` to `checksum_to_path()`, `unshard()` to `path_to_checksum()`.
-- BREAKING: `StoreEntry` now validates paths are relative.
+- BREAKING: Simplify path operations. Removed: `haspath()`, `makepath()`, `relpath()`, `abspath()`, `shard()`.
+  Rename `checksum_path()` to `checksum_to_path()`, `unshard()` to `path_to_checksum()`.
+- BREAKING: `StoreEntry` now validates that paths are relative.
+- BREAKING: Privatize the `checksum_to_path()` and `path_to_checksum()` methods
+
+- BREAKING, NEW: Hash exclusively using `blake3`
+- BREAKING, NEW: Overhaul `PutStrategies` and extract to own module, please review docs.
+
 - Some minor internal refactoring
 
 ## v0.8.1

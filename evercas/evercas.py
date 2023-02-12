@@ -1,18 +1,23 @@
 from __future__ import annotations
 
-import errno
 import json
 import os
 import pathlib
-import shutil
-from dataclasses import dataclass
-from tempfile import NamedTemporaryFile
-from typing import AsyncGenerator, Callable, Literal
+from typing import AsyncGenerator, Literal
 
 import anyio
 from blake3 import blake3
 
-from .utils import find_files, shard
+from evercas.put_strategies import PutStrategiesRunner, PutStrategy
+from evercas.store_entry import StoreEntry
+
+from .utils import (
+    AsyncFileReader,
+    ProgressAsyncFileReader,
+    ProgressCallback,
+    find_files,
+    shard,
+)
 
 PathLikeArg = str | os.PathLike[str]
 
@@ -27,7 +32,11 @@ class Store:
     If a store was already initialized in `root`, its config will be loaded
     from a file that was saved on init.
 
-    Otherwise, a call to `init()` is required to initialize the store.
+    Otherwise, a call to [`init()`][evercas.evercas.Store.init] is required to
+    initialize the store.
+
+    Unless otherwise indicated, `EverCas` APIs ***DON'T*** handle exceptions that may
+    be raised as part of normal operation.
 
     Attributes:
         root: Directory path used as root of storage space
@@ -36,16 +45,14 @@ class Store:
         prefix_width: Length of each subdirectory name as taken from the file checksum,
         fmode: store File permissions,
         dmode: store Directory permissions,
-        put_strategy: Selected `put_strategy`
+        default_put_strategy: Default
+            [`PutStrategy`][evercas.put_strategies.PutStrategiesRunner] to use.
 
     Parameters:
         root: **Absolute** directory path used as root of storage space
     """
 
-    def __init__(
-        self,
-        root: PathLikeArg,
-    ):
+    def __init__(self, root: PathLikeArg):
         sync_root = pathlib.Path(root)
         if not sync_root.is_absolute():
             raise ValueError("Store root must be an absolute path")
@@ -67,10 +74,15 @@ class Store:
         prefix_width: int = 2,
         fmode: int = 0o400,
         dmode: int = 0o700,
-        put_strategy: str | None = None,
+        default_put_strategy: PutStrategy = PutStrategy.EARLY_ATOMIC_RENAME,
     ) -> None:
         """Initialize a new repository in `root`, which must either be an empty
         or non-existent directory.
+
+        Warning: Important information about PutStrategy
+            The selected [`PutStrategy`][evercas.put_strategies.PutStrategiesRunner] has
+            a significant effect on the user experience and resulting data integrity.
+            Take you time choosing and considering the different trade-offs.
 
         Parameters:
             prefix_depth: Number of prefix folder to create when saving a
@@ -84,35 +96,44 @@ class Store:
             dmode: Directory mode permission to set for
                 subdirectories. Defaults to `0o700` which allows owner read, write and
                 execute.
-            put_strategy: Default `put_strategy` for
-                `put` method. See `put` for more information. Defaults
-                to `PutStrategies.copy`.
+            default_put_strategy: Default `PutStrategy` for `put()` and `put_dir()`.
+
+            See documentation for
+            [`PutStrategiesRunner`][evercas.put_strategies.PutStrategiesRunner] for the
+            various options.
         """
         sync_root = pathlib.Path(self._root)
+        sync_root.mkdir(parents=True, exist_ok=True)
+
         for _ in sync_root.iterdir():
             raise FileExistsError(
                 "Store directory must be empty for new repo initialization"
             )
 
-        if not sync_root.is_dir():
-            sync_root.mkdir(parents=True)
+        pathlib.Path(self._scratch_path).mkdir(parents=True)
 
         self._set_config(
             prefix_depth=prefix_depth,
             prefix_width=prefix_width,
             fmode=fmode,
             dmode=dmode,
-            put_strategy=put_strategy,
+            default_put_strategy=default_put_strategy,
         )
 
         self._is_initialized = True
 
     @property
     def root(self) -> str:
-        return str(self.root)
+        """The store's root directory path"""
+        return str(self._root)
+
+    @property
+    def _scratch_path(self) -> anyio.Path:
+        return self._root.joinpath(".scratch")
 
     @property
     def is_initialized(self) -> bool:
+        """`True` if points to an initialized store"""
         return self._is_initialized
 
     @property
@@ -130,28 +151,28 @@ class Store:
             prefix_width=config["prefix_width"],
             fmode=config["fmode"],
             dmode=config["dmode"],
-            put_strategy=config["put_strategy"],
+            default_put_strategy=config["default_put_strategy"],
         )
 
     @property
     def prefix_depth(self) -> int:
+        """Quantity of subfolders in which a file is stored"""
         return self._prefix_depth
 
     @property
     def prefix_width(self) -> int:
+        """Portion of the checksum consumed by each subfolder"""
         return self._prefix_width
 
     @property
     def fmode(self) -> int:
+        """The mode set on *new* files in the store"""
         return self._fmode
 
     @property
     def dmode(self) -> int:
+        """The mode set on *new* directories in the store"""
         return self._dmode
-
-    @property
-    def put_strategy(self):
-        return self._put_strategy
 
     def _set_config(
         self,
@@ -159,19 +180,27 @@ class Store:
         prefix_width: int,
         fmode: int,
         dmode: int,
-        put_strategy: str | None,
+        default_put_strategy: PutStrategy,
     ) -> None:
         if self._config_file.exists():
             raise FileExistsError("Overwriting existing config may cause loss of data")
 
         if not self._root.is_dir():
-            raise FileNotFoundError(f"Store root directory not found at {self._root}")
+            raise FileNotFoundError(f"{self._root} is not a directory")
 
         self._prefix_depth = prefix_depth
         self._prefix_width = prefix_width
         self._fmode = fmode
         self._dmode = dmode
-        self._put_strategy = PutStrategies.get(put_strategy) or PutStrategies.copy
+        self._default_put_strategy = default_put_strategy
+
+        self._put_strategy_runner = PutStrategiesRunner(
+            self.compute_checksum,
+            self._checksum_to_path,
+            self._scratch_path,
+            self._fmode,
+            self._dmode,
+        )
 
         json_config = json.dumps(
             {
@@ -179,7 +208,7 @@ class Store:
                 "prefix_width": self._prefix_width,
                 "fmode": self._fmode,
                 "dmode": self._dmode,
-                "put_strategy": self._put_strategy,
+                "default_put_strategy": self._default_put_strategy,
             }
         )
         self._config_file.write_text(json_config)
@@ -187,31 +216,26 @@ class Store:
     async def put(
         self,
         pathlike: PathLikeArg,
-        put_strategy: str | None = None,
+        progress_callback: ProgressCallback | None = None,
+        put_strategy: PutStrategy | None = None,
         dry_run: bool = False,
     ) -> StoreEntry:
         """Store contents of `pathlike` using its content hash for the path.
 
+        Warning: Important information about PutStrategy
+            The selected [`PutStrategy`][evercas.put_strategies.PutStrategiesRunner] has
+            a significant effect on the user experience and resulting data integrity.
+            Take you time choosing and considering the different trade-offs.
+
         Parameters:
             pathlike: **Absolute** path to file.
-            put_strategy: The strategy to use for adding
-                files; may be a function or the string name of one of the
-                built-in put strategies declared in `PutStrategies`
-                class. Defaults to `PutStrategies.copy`.
+            progress_callback: optional callback to receive `put` progress
+            put_strategy: The strategy to use for putting the file into the store.
+                If `None`, uses store's default strategy.
+                See the [`PutStrategy`][evercas.put_strategies.PutStrategiesRunner]
+                class for the available options.
             dry_run: Return the `StoreEntry` of the
-                file that would be appended but don't do anything.
-
-        Put strategies are functions `(store, source_path, dest_path)` where
-        `store` is the `Store` instance from which `put` was
-        called; `source_path` is the `anyio.Path` object representing the
-        data to add; and `dest_path` is the string absolute file path inside
-        the Store where it needs to be saved. The put strategy function should
-        create the path `dest_path` containing the data in `source_path`.
-
-        There are currently two built-in put strategies: "copy" (the default)
-        and "link". "link" attempts to hard link the file into the Store if
-        the platform and underlying filesystem support it, and falls back to
-        "copy" behavior.
+                file that would be appended but don't store it.
 
         Returns:
             StoreEntry: File's store entry.
@@ -221,78 +245,69 @@ class Store:
         if not source_path.is_absolute():
             raise ValueError("`pathlike` to put must be absolute")
 
-        checksum = await self.compute_checksum(source_path)
-        checksum_path = self.checksum_to_path(checksum)
-
-        # Only move file if it doesn't already exist.
-        if not checksum_path.is_file():
-            is_duplicate = False
-            if not dry_run:
-                if not checksum_path.parent.is_dir():
-                    await checksum_path.parent.mkdir(parents=True)
-                put_strategy_callable = (
-                    PutStrategies.get(put_strategy)
-                    or self._put_strategy
-                    or PutStrategies.copy
+        if dry_run:
+            checksum = await self.compute_checksum(
+                ProgressAsyncFileReader(
+                    source_path,
+                    progress_callback,
                 )
-                put_strategy_callable(self, source_path, checksum_path)
-        else:
-            is_duplicate = True
+            )
+            checksum_path = self._checksum_to_path(checksum)
+            return StoreEntry(checksum, str(checksum_path), self.exists(checksum))
 
-        entry = self.get(checksum)
+        created_entry = await self._put_strategy_runner.run(
+            put_strategy or self._default_put_strategy,
+            source_path,
+            progress_callback,
+        )
 
-        if entry is None:
+        got_entry = self.get(created_entry.checksum)
+
+        if got_entry is None:
             raise RuntimeError("Unknown error occurred")
 
-        return StoreEntry(entry.checksum, entry.path, is_duplicate)
+        return created_entry
 
-    async def putdir(
+    async def put_dir(
         self,
         pathlike: PathLikeArg,
         recursive: bool = False,
-        put_strategy: str | None = None,
+        progress_callback: ProgressCallback | None = None,
+        put_strategy: PutStrategy | None = None,
         dry_run: bool = False,
-    ) -> AsyncGenerator[tuple[anyio.Path, StoreEntry], None]:
+    ) -> AsyncGenerator[tuple[str, StoreEntry], None]:
         """Put all files from a directory.
+
+        Warning: Important information about PutStrategy
+            The selected [`PutStrategy`][evercas.put_strategies.PutStrategiesRunner] has
+            a significant effect on the user experience and resulting data integrity.
+            Take you time choosing and considering the different trade-offs.
 
         Parameters:
             root: Path to the directory to add.
             recursive: Find files recursively in `root`.
                 Defaults to `False`.
-            put_strategy: same as `put`.
-            dry_run: same as `put`.
+            progress_callback: optional callback to receive `put` progress. Called
+            separately for each file.
+            put_strategy: The strategy to use for putting the files into the store.
+                If `None`, uses store's default strategy.
+                See the [`PutStrategy`][evercas.put_strategies.PutStrategiesRunner]
+                class for the available options.
+            dry_run: Return the `StoreEntry` of the
+                files that would be appended but don't store any.
 
         Yields:
-            StoreEntry(StoreEntry): For each put file
+            StoreEntry(StoreEntry): For each inserted file
         """
-        async for file in find_files(anyio.Path(pathlike), recursive=recursive):
-            entry = await self.put(file, put_strategy=put_strategy, dry_run=dry_run)
-            yield (file, entry)
 
-    async def mktempfile(self, source_file_path: anyio.Path):
-        """Create a named temporary file from a `anyio.Path` object and
-        return its filename.
-        """
-        tmp = NamedTemporaryFile(delete=False)
-
-        oldmask = os.umask(0)
-
-        try:
-            os.chmod(tmp.name, self._fmode)
-        finally:
-            os.umask(oldmask)
-
-        chunk_size = (await source_file_path.stat()).st_blksize
-        async with await source_file_path.open("rb") as source_file:
-            while True:
-                data = await source_file.read(chunk_size)
-                if not data:
-                    break
-                tmp.write(to_bytes(data))
-
-        tmp.close()
-
-        return tmp.name
+        async for source_file in find_files(anyio.Path(pathlike), recursive=recursive):
+            entry = await self.put(
+                source_file,
+                put_strategy=put_strategy,
+                progress_callback=progress_callback,
+                dry_run=dry_run,
+            )
+            yield (str(source_file), entry)
 
     def get(self, checksum: str) -> StoreEntry | None:
         """Return `StoreEntry` from given checksum or path. If `file` does not
@@ -306,7 +321,7 @@ class Store:
         """
 
         # Check for sharded path.
-        filepath = self.checksum_to_path(checksum)
+        filepath = self._checksum_to_path(checksum)
         if filepath.is_file():
             return StoreEntry(checksum, str(filepath))
 
@@ -320,7 +335,7 @@ class Store:
             entry (StoreEntry):
         """
         async for file in find_files(self._root, recursive=True):
-            entry = self.get(self.path_to_checksum(file))
+            entry = self.get(self._path_to_checksum(file))
             if entry is not None:
                 yield entry
 
@@ -384,14 +399,30 @@ class Store:
         """Check whether a given file checksum exists on disk."""
         return self.get(checksum) is not None
 
-    async def compute_checksum(self, file: anyio.Path) -> str:
-        """Compute checksum of file."""
+    async def compute_checksum(
+        self, file: AsyncFileReader | PathLikeArg | anyio.Path
+    ) -> str:
+        """Compute checksum of file.
 
-        file_stat = await file.stat()
-        blksize = file_stat.st_blksize
-        file_size = file_stat.st_size
+        file: File to checksum
+        """
 
-        if file_size > 1.5 * 1024 * 1024:  # > 1.5 MiB
+        if not isinstance(file, AsyncFileReader):
+            file = AsyncFileReader(anyio.Path(file))
+
+        blksize = 4096
+        file_size = None
+
+        try:
+            file_stat = await file.source_path.stat()
+            blksize = file_stat.st_blksize or 4096
+            file_size = file_stat.st_size
+        except BaseException:
+            # if stat fails we just try to move on with file access
+            # using the default values for block, file size
+            pass
+
+        if not file_size or file_size > 1.5 * 1024 * 1024:  # > 1.5 MiB
             # block-aligned size closest to 32MiB, a benchmark sweet-spot
             chunk_size = (32 * 1024 * 1024 // blksize) * blksize
             max_threads = blake3.AUTO
@@ -401,16 +432,12 @@ class Store:
 
         # TODO: benchmark and tweak accordingly
         hasher = blake3(max_threads=max_threads)
-        async with await file.open("rb") as f:
-            while True:
-                data = await f.read(chunk_size)
-                if not data:
-                    break
-                hasher.update(data)
+        async for data in file.read(chunk_size):
+            hasher.update(data)
 
         return hasher.hexdigest()
 
-    def checksum_to_path(
+    def _checksum_to_path(
         self,
         checksum: str,
     ) -> anyio.Path:
@@ -418,7 +445,7 @@ class Store:
         path_parts = shard(checksum, self._prefix_depth, self._prefix_width)
         return anyio.Path("").joinpath(*path_parts)
 
-    def path_to_checksum(self, path: anyio.Path) -> str:
+    def _path_to_checksum(self, path: anyio.Path) -> str:
         """Unshard path to determine checksum."""
         if path.is_absolute():
             raise ValueError(f"Path {path} must be relative to store root")
@@ -448,9 +475,11 @@ class Store:
             if trust_file_path:
                 checksum = entry.checksum
             else:
-                checksum = await self.compute_checksum(anyio.Path(entry.path))
+                checksum = await self.compute_checksum(
+                    self._root.joinpath(anyio.Path(entry.path))
+                )
 
-            expected_path = self.checksum_to_path(checksum)
+            expected_path = self._checksum_to_path(checksum)
 
             if expected_path != entry.path:
                 yield (
@@ -469,97 +498,4 @@ class Store:
         return self.get_all()
 
 
-def to_bytes(text: bytes | str):
-    if not isinstance(text, bytes):
-        text = bytes(text, "utf8")
-    return text
 
-
-@dataclass(frozen=True)
-class StoreEntry:
-    """File address containing file's path on disk and it's content checksum.
-
-    Attributes:
-        checksum: Hexdigest of file contents.
-        path: File path **relative** to `Store.root`.
-        is_duplicate: Whether the newly returned StoreEntry represents a duplicate
-        of an existing file. Can only be `True` after a put operation.
-    """
-
-    def set_path(self, path: str):
-        if pathlib.Path(path).is_absolute():
-            raise ValueError("Entry path must be relative to its store's root")
-        self.__dict__["path"] = path
-
-    def get_path(self) -> str:
-        return str(self.__dict__.get("path"))
-
-    checksum: str
-    path: str = property(get_path, set_path)  # type: ignore
-    is_duplicate: bool = False
-
-    del set_path, get_path
-
-
-class PutStrategies:
-    """Namespace for built-in put strategies.
-
-    Should not be instantiated. Use the `get` static method to look up a
-    strategy by name, or directly reference one of the included class methods.
-    """
-
-    @classmethod
-    def get(
-        cls, method: str | None
-    ) -> Callable[[Store, anyio.Path, anyio.Path], None] | None:
-        """Look up a strategy by name string. You can also pass a function
-        which will be returned as is."""
-        if method:
-            if method == "get":
-                raise ValueError("invalid put strategy name, 'get'")
-            if callable(method):
-                return method
-            elif callable(getattr(cls, method)):
-                return getattr(cls, method)
-
-    @staticmethod
-    async def copy(store: Store, src_path: anyio.Path, dest_path: anyio.Path) -> None:
-        """The default copy put strategy, writes the file object to a
-        temporary file on disk and then moves it into place."""
-        tmp_path = await store.mktempfile(src_path)
-        shutil.move(tmp_path, dest_path)
-
-    @classmethod
-    async def link(
-        cls, store: Store, src_path: anyio.Path, dest_path: anyio.Path
-    ) -> None:
-        """Use os.link if available to create a hard link to the original
-        file if the store and the original file reside on the same
-        filesystem and the filesystem supports hard links."""
-
-        if not hasattr(os, "link"):
-            return await cls.copy(store, src_path, dest_path)
-
-        # No path available because e.g. a StringIO was used
-        if not src_path:
-            # Just copy
-            return await cls.copy(store, src_path, dest_path)
-
-        try:
-            # Try to create the hard link
-            os.link(src_path, dest_path)
-        except EnvironmentError as e:
-            # These are link specific errors. If any of these 3 are raised
-            # we try to copy instead
-            # EMLINK - src already has the maximum number of links to it
-            # EXDEV - invalid cross-device link
-            # EPERM - the dst filesystem does not support hard links
-            # (note EPERM could also be another permissions error; these
-            # will be raised again when we try to copy)
-            if e.errno not in (errno.EMLINK, errno.EXDEV, errno.EPERM):
-                raise
-            return await cls.copy(store, src_path, dest_path)
-        else:
-            # After creating the hard link, make sure it has the correct
-            # file permissions
-            os.chmod(dest_path, store.fmode)
